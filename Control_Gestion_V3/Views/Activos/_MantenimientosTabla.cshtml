@@ -1,0 +1,96 @@
+@using CapaModelo
+@model IEnumerable<CapaModelo.ActivoMantenimiento>
+
+@{
+    // Paginación (igual que en movimientos/software)
+    int page = ViewBag.Page is int ? (int)ViewBag.Page : 1;
+    int totalPages = ViewBag.TotalPages is int ? (int)ViewBag.TotalPages : 1;
+
+    string F(object v) => (v == null || string.IsNullOrWhiteSpace(v.ToString())) ? "—" : v.ToString();
+    Func<DateTime, string> Fec = d => d.ToString("dd/MM/yyyy");
+    Func<DateTime, string> FecFull = d => d.ToString("dd/MM/yyyy HH:mm");
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-light text-muted m-0">Sin mantenimientos registrados.</div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var m in Model)
+        {
+            <div class="list-group-item list-group-item-action d-flex gap-3 py-3">
+                <div class="rounded-circle bg-light border flex-shrink-0 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                    <i class="fas fa-tools"></i>
+                </div>
+
+                <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="fw-semibold">
+                            @Html.Raw(F(m.Tipo))
+                        </div>
+                        <small class="text-muted">
+                            @Html.Raw(Fec(m.FechaMantenimiento))
+                        </small>
+                    </div>
+
+                    <div class="small text-muted">
+                        Responsable:
+                        @Html.Raw(
+                            string.IsNullOrWhiteSpace(m.ResponsableNombre)
+                                ? "—"
+                                : (string.IsNullOrWhiteSpace(m.ResponsableCedula)
+                                    ? m.ResponsableNombre
+                                    : (m.ResponsableNombre + " (" + m.ResponsableCedula + ")"))
+                        )
+                    </div>
+
+                    <div class="mt-1">
+                        @Html.Raw(F(m.Detalle))
+                    </div>
+
+                    <div class="small text-muted mt-1">
+                        Registrado por el Usuario con ID: @Html.Raw((m.IdUsuarioCrea > 0) ? m.IdUsuarioCrea.ToString() : "—")
+                        - @Html.Raw(FecFull(m.FechaRegistro))
+                    </div>
+
+                    <div class="mt-2 d-flex justify-content-end">
+                        <button class="btn btn-sm btn-outline-secondary"
+                                title="Editar"
+                                onclick="abrirModalMantenimiento({ idMantenimiento: @m.IdMantenimiento, idActivo: @m.IdActivo })">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger ms-1"
+                                title="Eliminar"
+                                onclick="eliminarMantenimiento(@m.IdMantenimiento)">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    if (totalPages > 1)
+    {
+        <nav class="mt-2">
+            <ul class="pagination pagination-sm justify-content-end mb-0">
+                <li class="page-item @(page<=1 ? "disabled" : "")">
+                    <a class="page-link" href="javascript:void(0)" onclick="mn_irPagina(@(page-1))" aria-label="Anterior">&laquo;</a>
+                </li>
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i==page ? "active" : "")">
+                        <a class="page-link" href="javascript:void(0)" onclick="mn_irPagina(@i)">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(page>=totalPages ? "disabled" : "")">
+                    <a class="page-link" href="javascript:void(0)" onclick="mn_irPagina(@(page+1))" aria-label="Siguiente">&raquo;</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

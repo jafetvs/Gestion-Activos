@@ -1,0 +1,200 @@
+﻿/* ===== Modal Crear Activo: altura controlada y scroll interno ===== */
+
+#modalCrearActivo .modal-dialog {
+    max-width: 1140px;
+    width: 95%;
+    margin: 1rem auto;
+}
+
+#modalCrearActivo .modal-content {
+    display: flex;
+    flex-direction: column;
+    /* Que el modal nunca sea más alto que la ventana */
+    height: calc(100vh - 2rem);
+    overflow: hidden;
+}
+
+@supports (height:100dvh) {
+    #modalCrearActivo .modal-content {
+        height: calc(100dvh - 2rem);
+    }
+}
+
+/* Solo el body scrollea */
+#modalCrearActivo .modal-body {
+    flex: 1 1 auto;
+    min-height: 0; /* imprescindible con flex */
+    overflow-y: auto; /* scroll vertical */
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Footer siempre visible dentro del modal */
+#modalCrearActivo .modal-footer {
+    flex: 0 0 auto;
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid rgba(0,0,0,.08);
+    z-index: 1;
+}
+
+/* Textarea con scroll interno */
+#modalCrearActivo textarea.form-control {
+    min-height: 120px;
+    max-height: 35vh;
+    resize: vertical;
+    overflow: auto;
+}
+
+/* Si existe un CSS global que rompa los modales, lo neutralizamos aquí */
+#modalCrearActivo.modal {
+    overflow-y: hidden !important; /* evita scroll del overlay */
+}
+
+/* ==== NUEVOS AJUSTES AGREGADOS ==== */
+
+/* Garantiza que el body del modal recorte bien si el contenido es largo */
+.modal.show {
+    overflow-y: hidden; /* el scroll lo maneja el modal-body */
+}
+
+/* Ajuste por si algún estilo global pisa las reglas */
+#modalCrearActivo .modal-body {
+    overflow-y: auto !important;
+    max-height: calc(100vh - 8rem); /* margen de header + footer */
+}
+
+/* Alto aproximado del footer (ajústalo si cambias el tamaño de los botones) */
+#modalCrearActivo .modal-body {
+    padding-bottom: 88px; /* deja espacio para el footer sticky */
+}
+
+#modalCrearActivo {
+    --footer-h: 72px;
+}
+    /* alto del footer */
+    #modalCrearActivo .modal-body {
+        padding-bottom: calc(var(--footer-h) + 16px);
+    }
+
+    #modalCrearActivo .modal-footer {
+        min-height: var(--footer-h);
+    }
+
+/* Header oscuro para las tabs de Detalle */
+.card.card-primary.card-outline > .card-header {
+    background: #0F172A; /* fondo oscuro elegante */
+    border-bottom: 0; /* sin línea clásica */
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+}
+
+/* Tabs: aspecto pill y colores */
+#tabsActivo .nav-link {
+    color: #CBD5E1; /* texto tabs inactivas */
+    background: transparent;
+    border-radius: 9999px; /* pill */
+    border: 1px solid transparent; /* para evitar salto al activar */
+    transition: color .15s ease, background-color .15s ease, border-color .15s ease;
+}
+
+    #tabsActivo .nav-link:hover {
+        color: #F8FAFC;
+    }
+
+    #tabsActivo .nav-link i {
+        opacity: .9;
+    }
+
+    #tabsActivo .nav-link:hover i {
+        opacity: 1;
+    }
+
+    /* Tab activa bien diferenciada */
+    #tabsActivo .nav-link.active {
+        color: #FFFFFF;
+        background: #1F2937; /* pill activa */
+        border-color: #334155; /* borde sutil */
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+
+/* Opcional: separa un poco las pestañas */
+#tabsActivo .nav-item + .nav-item {
+    margin-left: .25rem;
+}
+
+/* Opcional: línea superior sutil entre header oscuro y body claro */
+.card.card-primary.card-outline > .card-body {
+    border-top: 1px solid #0b1220;
+}
+
+
+
+/* ===== Proveedores: tabla compacta y con anchos estables ===== */
+.table-provs th,
+.table-provs td {
+    vertical-align: middle;
+    padding: .5rem .6rem; /* compacta filas */
+}
+
+.table-provs thead th {
+    font-size: .92rem; /* títulos un poco más chicos */
+    font-weight: 600;
+    white-space: nowrap; /* evita corte feo de títulos */
+}
+
+/* Anchos por columna (ajusta si lo deseas) */
+.table-provs .col-prov {
+    min-width: 180px;
+}
+
+.table-provs .col-serv {
+    min-width: 120px;
+}
+
+.table-provs .col-contr {
+    width: 95px;
+}
+
+.table-provs .col-proced {
+    width: 95px;
+}
+
+.table-provs .col-renov {
+    width: 80px;
+    text-align: center;
+}
+
+.table-provs .col-vence {
+    width: 100px;
+}
+
+.table-provs .col-contacto {
+    min-width: 120px;
+}
+
+.table-provs .col-correo {
+    min-width: 160px;
+}
+
+.table-provs .col-web {
+    min-width: 140px;
+}
+
+.table-provs .col-activo {
+    width: 80px;
+    text-align: center;
+}
+
+.table-provs .col-acciones {
+    width: 120px;
+    white-space: nowrap;
+}
+
+/* En pantallas angostas puedes comprimir aún más */
+@media (max-width: 1200px) {
+    .table-provs thead th {
+        font-size: .88rem;
+    }
+}

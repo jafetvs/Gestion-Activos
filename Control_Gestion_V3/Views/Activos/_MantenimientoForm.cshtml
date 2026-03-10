@@ -1,0 +1,143 @@
+@using CapaModelo
+@model CapaModelo.ActivoMantenimiento
+
+@{
+    var idActivo = (Model?.IdActivo > 0 ? Model.IdActivo : (int)(ViewBag.IdActivo ?? 0));
+    var esNuevo = (Model?.IdMantenimiento ?? 0) == 0;
+
+    // Solicitantes esperados en ViewBag.Solicitantes (ID_usuario, Nombre, Cedula_Solicitante)
+    var solicitantes = ViewBag.Solicitantes as IEnumerable<dynamic>;
+
+    // Tipos de mantenimiento (puede venir por ViewBag.Tipos; si no, defaults)
+    IEnumerable<string> tipos = ViewBag.Tipos as IEnumerable<string>;
+    if (tipos == null || !tipos.Any())
+    {
+        tipos = new[] { "Preventivo", "Correctivo", "Predictivo", "Inspección", "Calibración", "Limpieza", "Actualización", "Reparación" };
+    }
+
+    string selTipo = Model?.Tipo ?? "";
+    int selResp = Model?.IdSolicitante ?? 0;
+    string fechaVal = (Model != null && Model.FechaMantenimiento != default(DateTime))
+                        ? Model.FechaMantenimiento.ToString("yyyy-MM-dd")
+                        : "";
+    string detalleVal = Model?.Detalle ?? "";
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">@((esNuevo) ? "Nuevo mantenimiento" : "Editar mantenimiento")</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+
+<div class="modal-body">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" id="mnIdActivo" value="@idActivo" />
+    <input type="hidden" id="mnIdMantenimiento" value="@(Model?.IdMantenimiento ?? 0)" />
+
+    <div class="mb-2">
+        <label class="form-label">Responsable *</label>
+        <select id="mnIdSolicitante" class="form-select" required>
+            <option value="">-- Seleccione --</option>
+            @if (solicitantes != null)
+            {
+                foreach (var s in solicitantes)
+                {
+                    int id = 0; string nom = null; string ced = null;
+                    try { id = (int)s.ID_Usuario; } catch { }
+                    try { nom = (string)s.Nombre; } catch { }
+                    try { ced = (string)s.Cedula_Solicitante; } catch { }
+
+                    var txt = (nom ?? "-") + (string.IsNullOrWhiteSpace(ced) ? "" : " (" + ced + ")");
+                    var selected = (id == selResp) ? "selected" : "";
+                    <option value="@id" @selected>@txt</option>
+                }
+            }
+        </select>
+        <div class="invalid-feedback">El responsable es obligatorio.</div>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Tipo *</label>
+        <select id="mnTipo" class="form-select" required>
+            <option value="">-- Seleccione --</option>
+            @foreach (var t in tipos)
+            {
+                var selected = string.Equals(t, selTipo, StringComparison.OrdinalIgnoreCase) ? "selected" : "";
+                <option value="@t" @selected>@t</option>
+            }
+        </select>
+        <div class="invalid-feedback">El tipo es obligatorio.</div>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Fecha *</label>
+        <input id="mnFecha" type="date" class="form-control" value="@fechaVal" required />
+        <div class="invalid-feedback">La fecha es obligatoria.</div>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Detalle</label>
+        <textarea id="mnDetalle" class="form-control" rows="3" maxlength="300">@detalleVal</textarea>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <button type="button" class="btn btn-primary" id="btnGuardarMantenimiento">Guardar</button>
+</div>
+
+<script>
+    (function () {
+        function inval(el, on) { if (on) el.classList.add('is-invalid'); else el.classList.remove('is-invalid'); }
+
+        $("#btnGuardarMantenimiento").off("click.mntsave").on("click.mntsave", function () {
+            var idMnt = parseInt($("#mnIdMantenimiento").val() || 0, 10);
+            var url = (idMnt === 0) ? window.MNT_CFG.routes.add : window.MNT_CFG.routes.edit;
+
+            var idActivo = $("#mnIdActivo").val();
+            var idSolic = $("#mnIdSolicitante").val();
+            var tipo = ($("#mnTipo").val() || "").trim();
+            var fecha = $("#mnFecha").val(); // yyyy-MM-dd
+            var detalle = ($("#mnDetalle").val() || "").trim();
+
+            // Validación mínima
+            inval(document.getElementById('mnIdSolicitante'), !idSolic);
+            inval(document.getElementById('mnTipo'), !tipo);
+            inval(document.getElementById('mnFecha'), !fecha);
+            if (!idSolic || !tipo || !fecha) return;
+
+            var $btn = $(this).prop('disabled', true);
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                    idMantenimiento: idMnt,
+                    idActivo: idActivo,
+                    idSolicitante: idSolic,
+                    tipo: tipo,
+                    fecha: fecha,
+                    detalle: detalle
+                }
+            }).done(function (res) {
+                if (res && res.ok) {
+                    // Cierra modal
+                    var modalEl = document.getElementById('modalMantenimiento');
+                    var inst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    inst.hide();
+
+                    // Recarga lista manteniendo la página actual si es posible
+                    if (window.mnt_reload) window.mnt_reload();
+                    else if (window.mnt_irPagina) window.mnt_irPagina(1);
+                } else {
+                    alert((res && res.msg) || "No se pudo guardar.");
+                }
+            }).fail(function () {
+                alert("Error de red.");
+            }).always(function () {
+                $btn.prop('disabled', false);
+            });
+        });
+    })();
+</script>

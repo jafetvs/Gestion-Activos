@@ -1,0 +1,9 @@
+﻿
+/**********************CONTENEDOR AGREGAR NUEVO*****************************/
+.custom-header {
+    background-color: #53a87c; /* Color de fondo deseado */
+    color: white; /* Color del texto */
+    padding: 10px; /* Espaciado */
+    border-radius: 4px; /* Bordes redondeados */
+    text-align: center; /* Centrar texto */
+}

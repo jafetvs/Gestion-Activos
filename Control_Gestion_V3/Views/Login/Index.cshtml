@@ -1,0 +1,115 @@
+﻿
+@{
+    ViewBag.Title = "Login";
+    Layout = null;
+}
+<!DOCTYPE html>
+
+<html>
+<head>
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <meta name="viewport" content="width=device-width" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="~/Content/css/loginCss.css" rel="stylesheet" />
+    <title>Index</title>
+</head>
+<body>
+    <div class="navbar-header">
+        <p class="navbar-brand"> APPS-GESTIÓN DOCUMENTAL</p>
+    </div>
+    <hr />
+
+    <div class="container">
+        <hr />    <!--  <h3 class="login-title">Ingreso al GDAI</h3>-->
+        <div class="card card-container">
+
+            <div class="text-center logo-container mt-3">
+                <a href="#">
+                    <span><img src="@Url.Content("~/Imagenes/EscudoAtenas.png")" alt="" height="150"></span>
+                </a>
+            </div>
+            @{
+                var error = ViewBag.Error as string;
+            }
+
+            <form class="form-signin" action="@Url.Action("Index", "Login")" method="post">
+                <span id="reauth-email" class="reauth-email"></span>
+                @if (!string.IsNullOrEmpty(error))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @error
+                    </div>
+                }
+
+                <input type="text" class="form-control mb-3" name="Nom_User" placeholder="Usuario" required autofocus>
+                <div class="password-container mb-3">
+                    <input type="password" id="inputPassword" class="form-control" name="clave" placeholder="Contraseña" spellcheck="false" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword()">
+                        <i id="iconPassword" class="fas fa-lock"></i>
+                    </button>
+                </div>
+
+
+                <div id="remember" class="checkbox">
+                    <label>
+                        <input type="checkbox" value="remember-me"> Recordar contraseña
+                    </label>
+                </div>
+                <button class="btn btn-lg btn-primary btn-block btn-signin mb-3" type="submit">Ingresar</button>
+
+            </form>
+
+            <!-- Link para recuperar contraseña -->
+            <div class="input-group">
+                <a href="@Url.Content("~/Registros/RecuperarPassword")" class="register-link">¿Olvidaste tu contraseña?</a>
+            </div>
+            <p class="register-link">¿No tienes una cuenta? <a href="@Url.Content("~/Registros/CrearCuenta")">Regístrate aquí</a></p>
+
+
+        </div><!-- /card-container -->
+        <div class="row mt-4">
+            <div class="col-sm-12 text-center">
+                <p class="text-white mb-0">
+                    Todos los derechos reservados &copy;<a href="https://www.atenasmuni.go.cr" target="_blank" class="text-white ml-1">
+                        <b>Tecnologías de Información -</b>
+                        <b> Municipalidad Atenas</b>
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div><!-- /container -->
+    @Scripts.Render("~/bundles/bootstrap")
+    <script type="text/javascript">
+
+    </script>
+    <script>
+        // Enviar logout al cerrar la página
+        window.addEventListener("beforeunload", function (e) {
+            navigator.sendBeacon('/Login/Salir');
+        });
+        // Prevenir botón "Atrás" en login y redirigir a Google
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            location.href = "https://www.google.com";
+        };
+
+        function togglePassword() {
+            const passwordInput = document.getElementById("inputPassword");
+            const icon = document.getElementById("iconPassword");
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                icon.classList.remove("fa-lock");
+                icon.classList.add("fa-lock-open");
+            } else {
+                passwordInput.type = "password";
+                icon.classList.remove("fa-lock-open");
+                icon.classList.add("fa-lock");
+            }
+        }
+    </script>
+ 
+</body>
+
+</html>
+    

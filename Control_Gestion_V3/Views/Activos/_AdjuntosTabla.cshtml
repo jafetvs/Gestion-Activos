@@ -1,0 +1,100 @@
+@using CapaModelo
+@model IEnumerable<CapaModelo.ActivoAdjunto>
+
+@{
+    // Paginación (igual que en software/mantenimientos)
+    int page = ViewBag.Page is int ? (int)ViewBag.Page : 1;
+    int totalPages = ViewBag.TotalPages is int ? (int)ViewBag.TotalPages : 1;
+
+    string F(object v) => (v == null || string.IsNullOrWhiteSpace(v.ToString())) ? "—" : v.ToString();
+    Func<DateTime, string> FecFull = d => d.ToString("dd/MM/yyyy HH:mm");
+
+    Func<long?, string> Human = bytes =>
+    {
+        if (!bytes.HasValue || bytes.Value < 0) return "—";
+        double b = bytes.Value;
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        int i = 0;
+        while (b >= 1024 && i < units.Length - 1) { b /= 1024; i++; }
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:0.##} {1}", b, units[i]);
+    };
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-light text-muted m-0">Sin adjuntos.</div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var a in Model)
+        {
+            <div class="list-group-item list-group-item-action d-flex gap-3 py-3">
+                <div class="rounded-circle bg-light border flex-shrink-0 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                    <i class="fas fa-paperclip"></i>
+                </div>
+
+                <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="fw-semibold">
+                            @Html.Raw(F(a.NombreArchivo))
+                        </div>
+                        <small class="text-muted">
+                            @Html.Raw(FecFull(a.FechaRegistro))
+                        </small>
+                    </div>
+
+                    <div class="small text-muted">
+                        Tipo: @Html.Raw(F(a.ContentType)) · Tamaño: @Html.Raw(Human(a.TamanoBytes))
+                    </div>
+
+                    <div class="small text-muted mt-1">
+                        Registrado por el Usuario con ID: @Html.Raw((a.IdUsuarioCrea > 0) ? a.IdUsuarioCrea.ToString() : "—")
+                    </div>
+
+                    <div class="mt-2 d-flex justify-content-end">
+                        <a class="btn btn-sm btn-outline-primary"
+                           title="Descargar"
+                           href="@(Url.Action("DescargarAdjunto","Activos", new { idAdjunto = a.IdAdjunto }))">
+                            <i class="fas fa-download"></i>
+                        </a>
+
+                        <button class="btn btn-sm btn-outline-secondary ms-1"
+                                title="Renombrar"
+                                onclick="abrirModalAdjunto({ idAdjunto: @a.IdAdjunto, idActivo: @a.IdActivo })">
+                            <i class="fas fa-edit"></i>
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger ms-1"
+                                title="Eliminar"
+                                onclick="eliminarAdjunto(@a.IdAdjunto)">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    if (totalPages > 1)
+    {
+        <nav class="mt-2">
+            <ul class="pagination pagination-sm justify-content-end mb-0">
+                <li class="page-item @(page<=1 ? "disabled" : "")">
+                    <a class="page-link" href="javascript:void(0)" onclick="ad_irPagina(@(page-1))" aria-label="Anterior">&laquo;</a>
+                </li>
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i==page ? "active" : "")">
+                        <a class="page-link" href="javascript:void(0)" onclick="ad_irPagina(@i)">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(page>=totalPages ? "disabled" : "")">
+                    <a class="page-link" href="javascript:void(0)" onclick="ad_irPagina(@(page+1))" aria-label="Siguiente">&raquo;</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

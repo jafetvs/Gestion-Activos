@@ -1,0 +1,146 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<link href="~/Content/css/Home_index.css" rel="stylesheet" />
+<div class="container">
+    <div class=" mt-4">
+        <!-- Sección Gestión Documental -->
+        <div class="jumbotron p-4  rounded bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Imagen a la derecha -->
+                <div>
+                    <img src="~/Imagenes/calendar1.png" class="img-fluid" style="max-width: 100px;">
+                </div>
+                <!-- Sección de texto -->
+                <div>
+                    <h4 class="mb-2">Bienvenido:  <strong>@ViewBag.Nombre</strong></h4>
+                    <strong>Registra tu tiempo laboral</strong>
+                </div>
+            </div>
+            <hr>
+            <!-- Botones alineados al centro -->
+            <div class="d-flex justify-content-center gap-3 mt-3">
+                <button onclick="inicializarInicio(this)" class="btn btn-primary btn-lg" data-cedula="@ViewBag.Cedula_Usuario">
+                    <i class="fas fa-sign-out-alt"></i> Inicio
+                </button>
+                <button onclick="inicializarFin(this)" class="btn btn-danger btn-lg" data-cedula="@ViewBag.Cedula_Usuario">
+                    <i class="fas fa-sign-out-alt"></i> Fin
+                </button>
+            </div>
+        </div>
+        <div class="mt-4">
+            <!-- Sección Gestión Documental -->
+            <div class="jumbotron">
+                <div class="left-section">
+                    <h1 class="text-success">SISTEMA DE CONTROL DE GESTIÓN MUNICIPAL</h1>
+                    <h2 class="text-success">CONTROLEX.1.0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- VENTANA OPCIONES
+                    <div class="right-section">
+            <img src="Imagenes/EscudoAtenas.png" alt="Logo Municipalidad Atenas" class="img-fluid">
+        </div>
+                   -->
+
+        <div class="row">
+            <!-- Gestión Jurídica -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <a href="@Url.Action("CrearCaso", "Casos")" class="text-decoration-none">
+                    <div class="card h-8 shadow-sm" style="background-color: #007bff; color: white;">
+                        <div class="card-body d-flex" style="color: white;">
+                            <div class="me-3 align-self-center">
+                                <img src="~/Imagenes/ley.png" style="width: 50px; height: 50px;" alt="Icono">
+
+                                <!--  <i class="fas fa-gavel fa-3x"></i>  -->
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">Gestión Jurídica</h5>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <!-- Policia Municipal -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <a href="@Url.Action("registroSuceso", "Policia")" class="text-decoration-none">
+                    <div class="card h-8 shadow-sm" style="background-color: #B58FB1; color: white; ">
+                        <div class="card-body d-flex" style="color: white;">
+                            <div class="me-3 align-self-center">
+                                <img src="~/Imagenes/policia.png" style="width: 50px; height: 50px;" alt="Icono">
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">Policia Municipal</h5>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <!-- Ingeniería-->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <a href="#" class="text-decoration-none">
+                    <div class="card h-8 shadow-sm" style="background-color: #5A8A5C; color: white;">
+                        <div class="card-body d-flex" style="color: white;">
+                            <div class="me-3 align-self-center">
+                                <img src="~/Imagenes/casa.png" style="width: 50px; height: 50px;" alt="Icono">
+                                <!-- <i class="fas fa-hard-hat fa-3x"></i>  -->
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">Ingeniería</h5>
+                                <p class="card-text small">Inspecciones y más</p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <!-- Gestión Activos-->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <a href="@Url.Action("Activos", "Activos")" class="text-decoration-none">
+                    <div class="card h-8 shadow-sm" style="background-color: #6F8094; color: white;">
+                        <div class="card-body d-flex" style="color: white;">
+                            <div class="me-3 align-self-center">
+                                <img src="~/Imagenes/la-gestion-del-inventario.png" style="width: 44px; height: 44px;" alt="Icono">
+                                <!-- <i class="fas fa-hard-hat fa-3x"></i>  -->
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">Gestión Activos</h5>
+                                <p class="card-text small">Tecnologías de Información</p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <a href="@Url.Action("crearTicket", "Tickets")" class="text-decoration-none">
+                    <div class="card h-8 shadow-sm" style="background-color: #149C85; color: white; ">
+                        <div class="card-body d-flex" style="color: white;">
+                            <div class="me-3 align-self-center">
+                                <img src="~/Imagenes/optimizacion-web.png" style="width: 49px; height: 49px;" alt="Icono">
+                                <!--  <i class="fas fa-laptop fa-3x"></i> -->
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">Mesa de servicio</h5>
+                                <p class="card-text small">Tecnologías de Información</p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <img src="Imagenes/EscudoAtenas.png" alt="Logo Municipalidad Atenas" class="img-fluid">
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@section scripts {
+    <script src="@Url.Content("~/Scripts/Views/Home_Index.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/Views/TiempoLaboral.js")" type="text/javascript"></script>
+
+}

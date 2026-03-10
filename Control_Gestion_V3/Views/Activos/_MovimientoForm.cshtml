@@ -1,0 +1,144 @@
+@model CapaModelo.ActivoMovimiento
+@{
+    // Ya vienen desde CargarCombos()
+    var solicitantes = ViewBag.Solicitantes as IEnumerable<dynamic>;
+    // Asegura que tengas el Id del activo en el modelo y por ViewBag (fallback)
+    var idActivo = (Model?.IdActivo > 0 ? Model.IdActivo : (int)(ViewBag.IdActivo ?? 0));
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">@((Model?.IdMovimiento ?? 0) == 0 ? "Nuevo movimiento" : "Editar movimiento")</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+
+<div class="modal-body">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" id="fmIdActivo" value="@idActivo" />
+    <input type="hidden" id="fmIdMovimiento" value="@(Model?.IdMovimiento ?? 0)" />
+
+    <!-- Responsable (OBLIGATORIO) -->
+    <div class="mb-2">
+        <label class="form-label">Responsable (Solicitante) *</label>
+        <select id="fmIdSolicitante" name="idSolicitante" class="form-select" required>
+            <option value="">-- Seleccione --</option>
+            @if (solicitantes != null)
+            {
+                foreach (var s in solicitantes)
+                {
+                    int id = 0;
+                    string nombre = "", ced = "";
+                    try { id = (int)s.ID_Usuario; } catch { }
+                    try { nombre = (string)s.Nombre ?? ""; } catch { }
+                    try { ced = (string)s.Cedula_Solicitante ?? ""; } catch { }
+
+                    var text = string.IsNullOrWhiteSpace(ced) ? nombre : $"{nombre} ({ced})";
+                    var selected = (Model != null && Model.IdSolicitante.HasValue && Model.IdSolicitante.Value == id) ? "selected" : "";
+                    <option value="@id" @selected>@text</option>
+                }
+            }
+        </select>
+        <div class="invalid-feedback">Selecciona un responsable.</div>
+    </div>
+
+    <!-- Tipo (OBLIGATORIO) -->
+    <div class="mb-2">
+        <label class="form-label">Tipo *</label>
+        <select id="fmTipo" name="tipo" class="form-select" required>
+            @foreach (var t in Enum.GetValues(typeof(CapaModelo.MovimientoTipo)))
+            {
+                var sel = (Model != null && Model.TipoMovimiento.ToString() == t.ToString()) ? "selected" : "";
+                <option value="@t" @sel>@t</option>
+            }
+        </select>
+        <div class="invalid-feedback">Selecciona un tipo.</div>
+    </div>
+
+    <!-- Fecha (OBLIGATORIO: precargada con ahora si viene vacía) -->
+    @{
+        var fechaVal = (Model != null && Model.FechaMovimiento != default(DateTime))
+            ? Model.FechaMovimiento.ToString("yyyy-MM-ddTHH:mm")
+            : DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
+    }
+<div class="mb-2">
+    <label class="form-label">Fecha *</label>
+    <input id="fmFecha" name="fecha" type="date" class="form-control"
+           required
+           value="@(Model != null ? Model.FechaMovimiento.ToString("yyyy-MM-dd") : "")" />
+    <div class="invalid-feedback">Indica una fecha.</div>
+
+
+
+</div>
+
+    <!-- Detalle (OPCIONAL) -->
+    <div class="mb-2">
+        <label class="form-label">Detalle</label>
+        <textarea id="fmDetalle" name="detalle" class="form-control" maxlength="300">@(Model != null ? Model.Detalle : "")</textarea>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <button type="button" class="btn btn-primary" id="btnGuardarMov">Guardar</button>
+</div>
+
+<script>
+    (function () {
+        // Validación simple Bootstrap (sin form, validamos manual)
+        function inval(el, on) {
+            if (on) el.classList.add('is-invalid'); else el.classList.remove('is-invalid');
+        }
+
+        $("#btnGuardarMov").on("click", function () {
+            var idMov = parseInt($("#fmIdMovimiento").val() || 0, 10);
+            var url = (idMov === 0) ? window.MOV_CFG.routes.add : window.MOV_CFG.routes.edit;
+
+            var idActivo = $("#fmIdActivo").val();
+            var idSolicitante = $("#fmIdSolicitante").val();
+            var tipo = $("#fmTipo").val();
+            var fecha = $("#fmFecha").val();
+            var detalle = $("#fmDetalle").val();
+
+            // Reglas: todo obligatorio excepto detalle
+            var ok = true;
+            inval(document.getElementById('fmIdSolicitante'), !idSolicitante);
+            inval(document.getElementById('fmTipo'), !tipo);
+            inval(document.getElementById('fmFecha'), !fecha);
+
+            if (!idSolicitante || !tipo || !fecha) {
+                ok = false;
+            }
+            if (!ok) return;
+
+            // Evita doble clic
+            var $btn = $(this).prop('disabled', true);
+
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                    idMovimiento: idMov,
+                    idActivo: idActivo,
+                    idSolicitante: idSolicitante,  // <- OBLIGATORIO
+                    tipo: tipo,
+                    detalle: detalle,
+                    fecha: fecha
+                }
+            }).done(function (res) {
+                if (res && res.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('modalMovimiento')).hide();
+                    // recarga la lista (a la página 1 para ver el último creado arriba)
+                    window.irPagina(1);
+                } else {
+                    alert((res && res.msg) || "No se pudo guardar.");
+                }
+            }).fail(function () {
+                alert("Error de red.");
+            }).always(function () {
+                $btn.prop('disabled', false);
+            });
+        });
+    })();
+</script>

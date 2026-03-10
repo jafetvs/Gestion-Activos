@@ -1,0 +1,92 @@
+@using CapaModelo
+@model IEnumerable<CapaModelo.ActivoMovimiento>
+
+@{
+    // Asegura valores por si faltan en ViewBag
+    int page = ViewBag.Page is int ? (int)ViewBag.Page : 1;
+    int totalPages = ViewBag.TotalPages is int ? (int)ViewBag.TotalPages : 1;
+
+    Func<ActivoMovimiento, string> ResponFmt = m =>
+    {
+        var nom = (m?.ResponsableNombre ?? "").Trim();
+        var ced = (m?.ResponsableCedula ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(nom) && string.IsNullOrWhiteSpace(ced)) return "—";
+        if (string.IsNullOrWhiteSpace(ced)) return nom;
+        if (string.IsNullOrWhiteSpace(nom)) return ced;
+        return $"{nom} ({ced})";
+    };
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-light text-muted m-0">Sin movimientos.</div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var m in Model)
+        {
+            <div class="list-group-item list-group-item-action d-flex gap-3 py-3">
+                <div class="rounded-circle bg-light border flex-shrink-0 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
+
+                <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="fw-semibold">
+                            @Html.Encode(m.TipoMovimiento.ToString())
+                        </div>
+                        <small class="text-muted">
+                            @m.FechaMovimiento.ToString("dd/MM/yyyy HH:mm")
+                        </small>
+                    </div>
+
+                    <div class="text-muted small">
+                        @Html.Raw(string.IsNullOrWhiteSpace(m.Detalle) ? "—" : m.Detalle)
+                    </div>
+
+                    <div class="mt-1 d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Resp.: @Html.Raw(ResponFmt(m))
+                        </small>
+
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    title="Editar"
+                                    onclick="abrirModalMovimiento({ idMovimiento: @m.IdMovimiento, idActivo: @m.IdActivo })">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger ms-1"
+                                    title="Eliminar"
+                                    onclick="eliminarMovimiento(@m.IdMovimiento)">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    if (totalPages > 1)
+    {
+        <nav class="mt-2">
+            <ul class="pagination pagination-sm justify-content-end mb-0">
+                <li class="page-item @(page<=1 ? "disabled" : "")">
+                    <a class="page-link" href="javascript:void(0)" onclick="irPagina(@(page-1))" aria-label="Anterior">&laquo;</a>
+                </li>
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i==page ? "active" : "")">
+                        <a class="page-link" href="javascript:void(0)" onclick="irPagina(@i)">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(page>=totalPages ? "disabled" : "")">
+                    <a class="page-link" href="javascript:void(0)" onclick="irPagina(@(page+1))" aria-label="Siguiente">&raquo;</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

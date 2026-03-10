@@ -1,0 +1,188 @@
+@using CapaModelo
+@model IEnumerable<Proveedor>
+
+@{
+    ViewBag.Title = "Proveedores";
+
+    string v(object x) => x == null ? "" : x.ToString();
+    string fmtDate(DateTime? d) => d.HasValue ? d.Value.ToString("yyyy-MM-dd") : "";
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h1 class="mb-1">Proveedores</h1>
+                <div class="text-muted">Gestión de proveedores y contratos</div>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="@Url.Action("Crear","Proveedores")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo proveedor
+                </a>
+
+                <div class="btn-group">
+                    <button type="button" id="btnExportarExcel" class="btn btn-success">
+                        <i class="far fa-file-excel"></i> Excel
+                    </button>
+                    <button type="button" id="btnExportarPdf" class="btn btn-danger">
+                        <i class="far fa-file-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        @* Mensajes desde acciones NO-AJAX *@
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["Ok"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Ok"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @* Contenedor para mensajes por AJAX *@
+        <div id="provMsg"></div>
+
+        <div class="card card-primary card-outline">
+            <div class="card-header pb-2">
+                <form id="frmFiltros" class="row g-2 align-items-end">
+                    @Html.AntiForgeryToken()
+
+                    <!-- FILA 1 -->
+                    <div class="col-lg-4 col-md-6">
+                        <label class="form-label mb-0 small text-muted">Buscar texto</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" name="texto" class="form-control"
+                                   value="@v(ViewBag.FTexto)" placeholder="Proveedor, correo, web…" />
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label mb-0 small text-muted">Servicio</label>
+                        <input type="text" name="servicio" class="form-control form-control-sm"
+                               value="@v(ViewBag.FServicio)" placeholder="Ej. mantenimiento" />
+                    </div>
+
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label mb-0 small text-muted">N° Contrato</label>
+                        <input type="text" name="noContrato" class="form-control form-control-sm"
+                               value="@v(ViewBag.FNoContrato)" />
+                    </div>
+
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label mb-0 small text-muted">N° Procedimiento</label>
+                        <input type="text" name="noProcedimiento" class="form-control form-control-sm"
+                               value="@v(ViewBag.FNoProcedimiento)" />
+                    </div>
+
+                    <!-- FILA 2 -->
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-0 small text-muted">Renovación</label>
+                        @{
+                            bool? fr = ViewBag.FRenovacion as bool?;
+                        }
+                        <select name="renovacionContrato" class="form-select form-select-sm" style="min-width:120px">
+                            <option value="">Todos</option>
+                            <option value="true" @(fr.HasValue && fr.Value ? "selected" : null)>Sí</option>
+                            <option value="false" @(fr.HasValue && fr.Value == false ? "selected" : null)>No</option>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-0 small text-muted">Activo</label>
+                        @{
+                            bool? fa = ViewBag.FActivo as bool?;
+                        }
+                        <select name="activo" class="form-select form-select-sm" style="min-width:120px">
+                            <option value="">Todos</option>
+                            <option value="true" @(fa.HasValue && fa.Value ? "selected" : null)>Sí</option>
+                            <option value="false" @(fa.HasValue && fa.Value == false ? "selected" : null)>No</option>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-0 small text-muted">Vence desde</label>
+                        <input type="date" name="venceDesde" class="form-control form-control-sm"
+                               value="@fmtDate(ViewBag.FVenceDesde as DateTime?)" />
+                    </div>
+
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-0 small text-muted">Vence hasta</label>
+                        <input type="date" name="venceHasta" class="form-control form-control-sm"
+                               value="@fmtDate(ViewBag.FVenceHasta as DateTime?)" />
+                    </div>
+
+                    <div class="col-lg-2 col-md-12 ms-lg-auto d-flex gap-2 justify-content-end">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                        <button type="button" id="btnLimpiar" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-eraser"></i> Limpiar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0 table-provs">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="col-prov th-nowrap">Proveedor</th>
+                                <th class="col-serv th-nowrap">Servicio</th>
+                                <th class="col-contr th-nowrap">N° Contrato</th>
+                                <th class="col-proced th-nowrap">N° Proced.</th>
+                                <th class="col-renov th-nowrap text-center">Renov.</th>
+                                <th class="col-vence th-nowrap">Vence</th>
+                                <th class="col-contacto th-nowrap">Contacto 1</th>
+                                <th class="col-correo th-nowrap">Correo 1</th>
+                                <th class="col-web th-nowrap">Web</th>
+                                <th class="col-activo th-nowrap text-center">Activo</th>
+                                <th class="col-acciones th-nowrap">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbProveedores">
+                            @Html.Partial("_ProveedoresFilas", Model ?? Enumerable.Empty<Proveedor>())
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </section>
+</div>
+
+@section estilos{
+    <link rel="stylesheet" href="~/Content/css/Activos.css" />
+    <style>
+        .table-provs thead th.th-nowrap {
+            white-space: nowrap !important;
+        }
+    </style>
+}
+
+@section scripts{
+    <script>
+        window.PROV_CFG = {
+            routes: {
+                listar: '@Url.Action("Filtrar","Proveedores")',
+                eliminar: '@Url.Action("Eliminar","Proveedores")',
+                exportXlsx: '@Url.Action("ExportarExcel","Proveedores")',
+                exportPdf: '@Url.Action("ExportarPdf","Proveedores")',
+                editar: id => '@Url.Action("Editar","Proveedores")/' + id
+            }
+        };
+    </script>
+    <script src="~/Scripts/Views/Proveedores.js"></script>
+}

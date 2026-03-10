@@ -1,0 +1,37 @@
+﻿/* Estilo para el fondo y texto del menú lateral */
+.sb-sidenav {
+    background-color: #409faf; /* Fondo del menú lateral */
+    color: white; /* Color del texto */
+}
+
+    /* Estilo para los enlaces dentro del menú */
+    .sb-sidenav a.nav-link {
+        color: white; /* Color del texto de los enlaces */
+        text-decoration: none; /* Opcional: quita el subrayado */
+    }
+
+        /* Cambia el color de los enlaces al pasar el cursor */
+        .sb-sidenav a.nav-link:hover {
+            color: #9be30b;
+        }
+
+/* aplica estilo a los encabezados del menú */
+.sb-sidenav-menu-heading {
+    font-weight: bold;
+    color: white; /* Cambia el color del texto del encabezado */
+}
+
+/* Estilo para la barra superior */
+.sb-topnav.navbar {
+    background-color: #409faf; /* Fondo de la barra superior */
+}
+
+.navbar-brand {
+    color: white !important;
+}
+/* Cambiar el color del botón y del ícono */
+.nav-item .nav-link {
+    color: white;
+    background-color: transparent;
+    border: none;
+}

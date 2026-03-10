@@ -1,0 +1,177 @@
+@model CapaModelo.Proveedor
+@{
+    ViewBag.Title = "Editar Proveedor";
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h1 class="mb-1">Editar Proveedor</h1>
+                <p class="text-muted mb-0">Modifica la información del proveedor</p>
+            </div>
+            <div>
+                <a href="@Url.Action("Proveedores","Proveedores")" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al listado
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        @using (Html.BeginForm("Editar", "Proveedores", FormMethod.Post, new { @class = "card shadow-sm", id = "frmProveedor" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.IdProveedor)
+
+            <div class="card-body">
+                @Html.ValidationSummary(true, "Corrige los errores e inténtalo nuevamente.", new { @class = "alert alert-danger" })
+
+                <!-- Información general -->
+                <div class="mb-3">
+                    <h5 class="text-primary mb-2"><i class="fas fa-building me-1"></i> Información general</h5>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Nombre de la empresa <span class="text-danger">*</span></label>
+                            @Html.TextBoxFor(m => m.NombreEmpresa, new { @class = "form-control", required = "required", maxlength = "150" })
+                            @Html.ValidationMessageFor(m => m.NombreEmpresa, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Servicio</label>
+                            @Html.TextBoxFor(m => m.Servicio, new { @class = "form-control", maxlength = "150" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contrato -->
+                <div class="mb-3">
+                    <h5 class="text-primary mb-2"><i class="fas fa-file-contract me-1"></i> Contrato</h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">N° Contrato</label>
+                            @Html.TextBoxFor(m => m.NoContrato, new { @class = "form-control", maxlength = "50" })
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">N° Procedimiento</label>
+                            @Html.TextBoxFor(m => m.NoProcedimiento, new { @class = "form-control", maxlength = "50" })
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label d-block">Renovación</label>
+                            <div class="form-check form-switch mt-1">
+                                @Html.CheckBoxFor(m => m.RenovacionContrato, new { @class = "form-check-input" })
+                                <label class="form-check-label">Automática</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Vence</label>
+                            @Html.TextBoxFor(m => m.FechaVencimientoContrato, new { @class = "form-control", type = "date" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contactos -->
+                <div class="mb-3">
+                    <h5 class="text-primary mb-2"><i class="fas fa-address-book me-1"></i> Contactos</h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Contacto 1 - Nombre</label>
+                            @Html.TextBoxFor(m => m.Contacto1_Nombre, new { @class = "form-control", maxlength = "100" })
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Contacto 1 - Teléfono</label>
+                            @Html.TextBoxFor(m => m.Contacto1_Telefono, new { @class = "form-control", maxlength = "30", type = "tel" })
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Contacto 1 - Correo</label>
+                            @Html.TextBoxFor(m => m.Contacto1_Correo, new { @class = "form-control", maxlength = "120", type = "email" })
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Contacto 2 - Nombre</label>
+                            @Html.TextBoxFor(m => m.Contacto2_Nombre, new { @class = "form-control", maxlength = "100" })
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Contacto 2 - Teléfono</label>
+                            @Html.TextBoxFor(m => m.Contacto2_Telefono, new { @class = "form-control", maxlength = "30", type = "tel" })
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Contacto 2 - Correo</label>
+                            @Html.TextBoxFor(m => m.Contacto2_Correo, new { @class = "form-control", maxlength = "120", type = "email" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Web y estado -->
+                <div class="mb-1">
+                    <h5 class="text-primary mb-2"><i class="fas fa-cog me-1"></i> Otros</h5>
+                    <div class="row g-3">
+                        <div class="col-md-9">
+                            <label class="form-label">Página Web</label>
+                            @Html.TextBoxFor(
+                                m => m.PaginaWeb,
+                                new
+                                     {
+                                    @class = "form-control",
+                                    maxlength = "200",
+                                    placeholder = "sitio o dominio (con o sin http)",
+                                    type = "text",
+                                    data_val = "false",
+                                    data_val_url = "false",
+                                    autocomplete = "url"
+                                })
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label d-block">Activo</label>
+                            <div class="form-check form-switch mt-1">
+                                @Html.CheckBoxFor(m => m.Activo, new { @class = "form-check-input" })
+                                <label class="form-check-label">Habilitado</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar cambios
+                </button>
+                <a href="@Url.Action("Proveedores","Proveedores")" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        }
+    </section>
+</div>
+
+@section estilos{
+    <link rel="stylesheet" href="~/Content/css/Activos.css" />
+}
+@section scripts{
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        (function () {
+            var frm = document.getElementById('frmProveedor');
+            var urlInput = frm ? frm.querySelector('input[name="PaginaWeb"]') : null;
+            if (!frm || !urlInput) return;
+
+            function hasScheme(v) {
+                return /^[a-z][a-z0-9+.\-]*:\/\//i.test(v);
+            }
+            function normalize(v) {
+                v = (v || '').trim();
+                if (!v) return v;
+                if (!hasScheme(v)) v = 'http://' + v;
+                return v;
+            }
+
+            urlInput.addEventListener('blur', function () {
+                var v = urlInput.value;
+                if (!v) return;
+                if (!hasScheme(v)) urlInput.value = 'http://' + v.trim();
+            });
+
+            frm.addEventListener('submit', function () {
+                if (urlInput.value)
+                    urlInput.value = normalize(urlInput.value);
+            });
+        })();
+    </script>
+}

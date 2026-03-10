@@ -1,0 +1,134 @@
+@using CapaModelo
+@model CapaModelo.ActivoAdjunto
+
+@{
+    var idActivo = (Model?.IdActivo > 0 ? Model.IdActivo : (int)(ViewBag.IdActivo ?? 0));
+    var esNuevo = (Model?.IdAdjunto ?? 0) == 0;
+
+    string nombreVal = Model?.NombreArchivo ?? "";
+    string tipoVal = Model?.ContentType ?? "";
+    long? sizeVal = Model?.TamanoBytes;
+    Func<long?, string> Human = bytes =>
+    {
+        if (!bytes.HasValue || bytes.Value < 0) return "—";
+        double b = bytes.Value;
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        int i = 0; while (b >= 1024 && i < units.Length - 1) { b /= 1024; i++; }
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:0.##} {1}", b, units[i]);
+    };
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">@((esNuevo) ? "Nuevo adjunto" : "Renombrar adjunto")</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+
+<div class="modal-body">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" id="adIdActivo" value="@idActivo" />
+    <input type="hidden" id="adIdAdjunto" value="@(Model?.IdAdjunto ?? 0)" />
+
+    <div class="mb-2">
+        <label class="form-label">Nombre del archivo *</label>
+        <input id="adNombre" type="text" class="form-control" maxlength="200"
+               value="@nombreVal" required />
+        <div class="invalid-feedback">El nombre es obligatorio.</div>
+    </div>
+
+    @if (esNuevo)
+    {
+        <div class="mb-2">
+            <label class="form-label">Archivo *</label>
+            <input id="adFile" name="adFile" type="file" class="form-control" required />
+            <div class="form-text">Se permite subir cualquier tipo de archivo.</div>
+            <div class="invalid-feedback">Selecciona un archivo.</div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-light small">
+            <div class="mb-1"><strong>Tipo:</strong> @tipoVal</div>
+            <div><strong>Tamaño:</strong> @Human(sizeVal)</div>
+            <div class="text-muted mt-1">Solo puedes cambiar el <em>nombre</em> en esta pantalla.</div>
+        </div>
+    }
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <button type="button" class="btn btn-primary" id="btnGuardarAdjunto">Guardar</button>
+</div>
+
+<script>
+    (function () {
+        function inval(el, on) { if (on) el.classList.add('is-invalid'); else el.classList.remove('is-invalid'); }
+
+        $("#btnGuardarAdjunto").on("click", function () {
+            var idAdj = parseInt($("#adIdAdjunto").val() || 0, 10);
+            var idActivo = $("#adIdActivo").val();
+            var nombre = ($("#adNombre").val() || "").trim();
+
+            inval(document.getElementById('adNombre'), !nombre);
+            if (!nombre) return;
+
+            var $btn = $(this).prop('disabled', true);
+
+            if (idAdj === 0) {
+                // SUBIR (crear) -> multipart/form-data
+                var file = document.getElementById("adFile").files[0];
+                inval(document.getElementById('adFile'), !file);
+                if (!file) { $btn.prop('disabled', false); return; }
+
+                var fd = new FormData();
+                fd.append("__RequestVerificationToken", $('input[name="__RequestVerificationToken"]').val());
+                fd.append("idActivo", idActivo);
+                fd.append("nombreArchivo", nombre);
+                fd.append("archivo", file);
+
+                $.ajax({
+                    type: "POST",
+                    url: window.ADJ_CFG.routes.add,
+                    data: fd,
+                    processData: false,
+                    contentType: false
+                }).done(function (res) {
+                    if (res && res.ok) {
+                        bootstrap.Modal.getInstance(document.getElementById('modalAdjunto')).hide();
+                        window.ad_irPagina(1); // refrescar lista a página 1
+                    } else {
+                        alert((res && res.msg) || "No se pudo guardar el adjunto.");
+                    }
+                }).fail(function () {
+                    alert("Error de red.");
+                }).always(function () {
+                    $btn.prop('disabled', false);
+                });
+
+            } else {
+                // RENOMBRAR (solo nombre)
+                $.ajax({
+                    type: "POST",
+                    url: window.ADJ_CFG.routes.editName,
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                        idAdjunto: idAdj,
+                        idActivo: idActivo,
+                        nombreArchivo: nombre
+                    }
+                }).done(function (res) {
+                    if (res && res.ok) {
+                        bootstrap.Modal.getInstance(document.getElementById('modalAdjunto')).hide();
+                        window.ad_irPagina(1); // refrescar lista
+                    } else {
+                        alert((res && res.msg) || "No se pudo renombrar.");
+                    }
+                }).fail(function () {
+                    alert("Error de red.");
+                }).always(function () {
+                    $btn.prop('disabled', false);
+                });
+            }
+        });
+    })();
+</script>

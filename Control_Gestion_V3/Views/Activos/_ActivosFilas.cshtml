@@ -1,0 +1,97 @@
+@using CapaModelo
+@model IEnumerable<CapaModelo.Activo>
+
+@{
+    var categorias = ViewBag.Categorias as IEnumerable<dynamic>;
+    var departamentos = ViewBag.Departamentos as IEnumerable<dynamic>;
+    var solicitantes = ViewBag.Solicitantes as IEnumerable<dynamic>;
+    var tipos = ViewBag.Tipos as IEnumerable<dynamic>;
+    var clases = ViewBag.Clases as IEnumerable<dynamic>;
+
+    Func<int, string> CatName = id =>
+    {
+        if (categorias != null)
+            foreach (var c in categorias) { try { if ((int)c.IdCategoria == id) return (string)c.Nombre; } catch { } }
+        return "-";
+    };
+
+    Func<int?, string> DeptoName = id =>
+    {
+        if (!id.HasValue) return "-";
+        if (departamentos != null)
+            foreach (var d in departamentos) { try { if ((int)d.Id_Departamento == id.Value) return (string)d.Descripcion; } catch { } }
+        return "-";
+    };
+
+    Func<int?, string> TipoName = id =>
+    {
+        if (!id.HasValue) return "-";
+        if (tipos != null)
+            foreach (var t in tipos) { try { if ((int)t.IdTipo == id.Value) return (string)t.Nombre; } catch { } }
+        return "-";
+    };
+
+    Func<int?, string> ClaseName = id =>
+    {
+        if (!id.HasValue) return "-";
+        if (clases != null)
+            foreach (var c in clases) { try { if ((int)c.IdClase == id.Value) return (string)c.Nombre; } catch { } }
+        return "-";
+    };
+
+    Func<int?, string> RespNameCed = id =>
+    {
+        if (!id.HasValue || id.Value <= 0 || solicitantes == null) return "-";
+        foreach (var s in solicitantes)
+            try
+            {
+                if ((int)s.ID_Usuario == id.Value)
+                {
+                    string nom = null, ced = null;
+                    try { nom = (string)s.Nombre; } catch { }
+                    try { ced = (string)s.Cedula_Solicitante; } catch { }
+                    nom = string.IsNullOrWhiteSpace(nom) ? "-" : nom;
+                    return string.IsNullOrWhiteSpace(ced) ? nom : (nom + " (" + ced + ")");
+                }
+            }
+            catch { }
+        return "-";
+    };
+}
+
+@if (Model != null && Model.Any())
+{
+    foreach (var a in Model)
+    {
+        <tr data-id="@a.IdActivo">
+            <td>@(string.IsNullOrWhiteSpace(a.Codigo) ? "-" : a.Codigo)</td>
+            <td>
+                <div class="fw-bold">@(string.IsNullOrWhiteSpace(a.NombreTipo) ? "-" : a.NombreTipo)</div>
+                @* <div class="text-muted small">@a.Descripcion</div> *@
+            </td>
+            <td>@CatName(a.IdCategoria)</td>
+            <td>@TipoName(a.IdTipo)</td>
+            <td>@ClaseName(a.IdClase)</td>
+            <td>@DeptoName(a.Id_Departamento)</td>
+            <td class="celda-clasif">@a.Clasificacion</td>
+            <td>@(string.IsNullOrWhiteSpace(a.Serie) ? "-" : a.Serie)</td>
+            <td>@(string.IsNullOrWhiteSpace(a.Modelo) ? "-" : a.Modelo)</td>
+            <td>@(string.IsNullOrWhiteSpace(a.PlacaCodBarras) ? "-" : a.PlacaCodBarras)</td>
+            <td>@RespNameCed(a.IdSolicitante)</td>
+            <td class="text-center">
+                <a class="btn btn-info btn-sm" href="@Url.Action("Detalle","Activos", new { id = a.IdActivo })" title="Ver detalle">
+                    <i class="far fa-eye"></i>
+                </a>
+                <button type="button" class="btn btn-danger btn-sm btn-eliminar" data-id="@a.IdActivo" title="Eliminar">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </td>
+        </tr>
+    }
+}
+else
+{
+    <tr>
+        <td colspan="12" class="text-center text-muted">Sin resultados</td>
+    </tr>
+}

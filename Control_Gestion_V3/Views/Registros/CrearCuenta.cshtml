@@ -1,0 +1,199 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title Gestión Documental</title>
+    <link href="~/Content/css/CrearCuenta.css" rel="stylesheet" />
+
+    @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/PluginsCSS")
+    @Styles.Render("~/Content/fullcalendarCSS")
+</head>
+<body>
+    <div id="layoutAuthentication">
+        <div id="layoutAuthentication_content">
+            <main>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-6">
+                            <div class="card shadow-lg  rounded-lg mt-3" style="background-color: #e6ebeb; border: 1px solid #415454;">
+                                <div class="card-header" style=" background-color: #338427;">
+                                    <h3 class="text-center font-weight-light my-2" style="color: yellow;">Control de gestión - Crear Cuenta</h3>
+                                </div>
+
+                                <div class="card-body">
+                                    <div class="text-center mb-4 mt-3">
+                                        <a href="#">
+                                            <span><img src="@Url.Content("~/Imagenes/EscudoAtenas.png")" alt="" height="100"></span>
+                                        </a>
+                                    </div>
+                                    <form id="form">
+                                        <div class="row mb-2">
+                                            <div class="col-md-6">
+                                                <div class="">
+                                                    <select class="form-select py-3" id="cboTipoDocumento" name="cboTipoDocumento">
+                                                        <option value="" selected disabled>Tipo de identificación</option>
+                                                        <option value="DNI">Cédula Nacional</option>
+                                                        <option value="Carnet Extranjeria">Carnet Extranjeria</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="form-floating">
+                                                    <input class="form-control" id="inputCedula" name="inputCedula" type="number" step="1" placeholder="Identificación" />
+                                                    <label for="inputCedula">Identificación</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input class="form-control" id="inputNombre" name="inputNombre" type="text" placeholder="Nombre" />
+                                                    <label for="inputNombre">Nombre Completo</label>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input class="form-control" id="inputNom_User" name="inputNom_User" type="text" placeholder="Nombre Usuario" />
+                                                    <label for="inputNom_User">Nombre Usuario</label>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control" id="inputDireccion" name="inputDireccion" type="text" placeholder="Dirección" />
+                                            <label for="inputDireccion">Dirección</label>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input class="form-control" id="inputTelefono" name="inputTelefono" type="number" step="1" placeholder="Teléfono" />
+                                                    <label for="inputTelefono">Teléfono</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input class="form-control" id="inputCorreo" name="inputCorreo" type="email" placeholder="Correo" />
+                                                    <label for="inputCorreo">Correo</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Contraseñas -->
+
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <div class="mb-3 mb-md-0 password-container">
+                                                    <label for="inputPassword" class="form-label">Contraseña</label>
+                                                    <div class="input-wrapper">
+                                                        <input name="inputPassword" type="password" maxlength="50" class="form-control"
+                                                               id="inputPassword" placeholder="Ingrese contraseña" autocomplete="new-password" required />
+
+                                                        <button type="button" class="toggle-password" onclick="togglePassword('inputPassword', 'icon1')">
+                                                            <i id="icon1" class="fas fa-lock"></i>
+                                                        </button>
+                                                    </div>
+                                                    <span class="text-danger" id="errorPassword"></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Campo: Confirmar Contraseña -->
+                                            <div class="col-md-6">
+                                                <div class="mb-3 mb-md-0 password-container">
+                                                    <label for="inputPasswordConfirm" class="form-label">Confirmar Contraseña</label>
+                                                    <div class="input-wrapper">
+                                                        <input name="inputPasswordConfirm" type="password" maxlength="50" class="form-control"
+                                                               id="inputPasswordConfirm" placeholder="Confirme contraseña" autocomplete="new-password" required />
+
+                                                        <button type="button" class="toggle-password" onclick="togglePassword('inputPasswordConfirm', 'icon2')">
+                                                            <i id="icon2" class="fas fa-lock"></i>
+                                                        </button>
+                                                    </div>
+                                                    <span class="text-danger" id="errorPasswordConfirm"></span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="mt-4 mb-0">
+                                            <div class="d-grid">
+                                                <button type="button" onclick="Guardar()">Crear Cuenta</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="card-footer text-center py-3">
+                                    <div class="small"><a href="@Url.Content("~/Login/Index")">Ya tienes cuenta? Regresar a login</a></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        function Guardar() {
+            if ($("#form").valid()) {
+                var request = {
+                    objeto: {
+                        Cedula_Usuario: $("#inputCedula").val(),
+                        Nom_Completo: $("#inputNombre").val(),
+                        Nom_User: $("#inputNom_User").val(),
+                        Correo: $("#inputCorreo").val(),
+                        Clave: $("#inputPassword").val(),
+                        Nom_Rol: "Usuario",  // Valor por defecto si aplica
+                        IdRol: 2,           
+                        Activo: true         // Por defecto
+                    }
+                };
+
+                jQuery.ajax({
+                    url: "/Usuario/Guardar", // Asegúrate de que esta URL esté bien definida
+                    type: "POST",
+                    data: JSON.stringify(request),
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+
+                    success: function (data) {
+                        if (data.resultado) {
+                            swal("Éxito", "Cuenta creada exitosamente", "success");
+                            $("#form")[0].reset(); // Limpia el formulario
+                        } else {
+                            swal("Mensaje", "No se pudo crear la cuenta. Verifique los datos.", "warning");
+                        }
+                    },
+                    error: function (error) {
+                        console.log("Error en la solicitud:", error);
+                        swal("Error", "Hubo un problema al intentar crear la cuenta.", "error");
+                    }
+                });
+            }
+        }
+    </script>
+
+
+    @Scripts.Render("~/bundles/jquery")
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/Complementos")
+    @Scripts.Render("~/Content/PluginsJS")
+    @Scripts.Render("~/bundles/fullcalendar")
+    @Scripts.Render("~/bundles/bootstrap")
+
+    <script src="@Url.Content("~/Scripts/Views/Vistas_Registros.js")" type="text/javascript"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,550 @@
+﻿@using CapaModelo
+@model IEnumerable<CapaModelo.Activo>
+
+@{
+    ViewBag.Title = "Gestión de Activos";
+
+    var texto = ViewBag.FiltroTexto as string;
+    int? filtroCat = ViewBag.FiltroIdCategoria as int?;
+    int? filtroDep = ViewBag.FiltroIdDepto as int?;
+    int? filtroTipo = ViewBag.FiltroIdTipo as int?;
+    int? filtroClase = ViewBag.FiltroIdClase as int?;
+    ActivoClasificacion? filtroClasif = ViewBag.FiltroClasif as ActivoClasificacion?;
+
+    var categorias = ViewBag.Categorias as IEnumerable<dynamic>;
+    var departamentos = ViewBag.Departamentos as IEnumerable<dynamic>;
+    var solicitantes = ViewBag.Solicitantes as IEnumerable<dynamic>;
+    var proveedores = ViewBag.Proveedores as IEnumerable<dynamic>;
+    var tipos = ViewBag.Tipos as IEnumerable<dynamic>;
+    var clases = ViewBag.Clases as IEnumerable<dynamic>;
+
+    Func<int, string> CatName = id =>
+    {
+        if (categorias != null)
+        {
+            foreach (var c in categorias)
+            { try { if ((int)c.IdCategoria == id) return (string)c.Nombre; } catch { } }
+        }
+        return "-";
+    };
+
+    Func<int?, string> DeptoName = id =>
+    {
+        if (!id.HasValue) return "-";
+        if (departamentos != null)
+        {
+            foreach (var d in departamentos)
+            { try { if ((int)d.Id_Departamento == id.Value) return (string)d.Descripcion; } catch { } }
+        }
+        return "-";
+    };
+
+    Func<int?, string> RespNameCed = id =>
+    {
+        if (!id.HasValue || id.Value <= 0 || solicitantes == null) return "-";
+        foreach (var s in solicitantes)
+        {
+            try
+            {
+                if ((int)s.ID_Usuario == id.Value)
+                {
+                    string nom = null, ced = null;
+                    try { nom = (string)s.Nombre; } catch { }
+                    try { ced = (string)s.Cedula_Solicitante; } catch { }
+                    nom = string.IsNullOrWhiteSpace(nom) ? "-" : nom;
+                    return string.IsNullOrWhiteSpace(ced) ? nom : (nom + " (" + ced + ")");
+                }
+            }
+            catch { }
+        }
+        return "-";
+    };
+}
+
+<div class="content-wrapper">
+
+    <section class="content-header">
+        <h1 class="mb-3">Gestión de Activos</h1>
+
+        @if (TempData["Ok"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Ok"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+    </section>
+
+    <section class="content">
+        <div class="card card-primary card-outline">
+
+            <div class="card-header">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+
+                    <!-- Filtros (clásico GET) -->
+                    <form id="frmFiltros" class="form-inline mb-2 mb-sm-0 flex-grow-1 d-flex align-items-center gap-2" method="get" action="@Url.Action("Activos","Activos")">
+                        <div class="input-group input-group-sm w-auto">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" name="texto" value="@texto" class="form-control" placeholder="Buscar por código / placa / responsable…">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <a href="@Url.Action("Activos","Activos")" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i> Limpiar
+                            </a>
+                        </div>
+
+                        <button class="btn btn-link btn-sm ms-2" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#filtrosAvanzados"
+                                aria-expanded="false" aria-controls="filtrosAvanzados">
+                            <i class="fas fa-sliders-h"></i> Filtros
+                            @{
+                                bool hayFiltros = (filtroCat.HasValue || filtroDep.HasValue || filtroClasif.HasValue || filtroTipo.HasValue || filtroClase.HasValue);
+                            }
+                            @if (hayFiltros)
+                            {
+                                <span class="badge bg-info ms-1">activos</span>
+                            }
+                        </button>
+                    </form>
+
+                    <div class="d-flex align-items-center">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-file-export"></i> Exportar
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end shadow">
+                                <a class="dropdown-item" id="exp-xlsx"
+                                   href="@Url.Action("ExportarExcel","Activos", new { texto = texto, idCategoria = filtroCat, idDepto = filtroDep, clasificacion = filtroClasif, idTipo = filtroTipo, idClase = filtroClase })">
+                                    <i class="far fa-file-excel me-2"></i> Excel (.xlsx)
+                                </a>
+                                <a class="dropdown-item" id="exp-pdf"
+                                   href="@Url.Action("ExportarPdf","Activos", new { texto = texto, idCategoria = filtroCat, idDepto = filtroDep, clasificacion = filtroClasif, idTipo = filtroTipo, idClase = filtroClase })"
+                                   target="_blank" rel="noopener">
+                                    <i class="far fa-file-pdf me-2"></i> PDF (.pdf)
+                                </a>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrearActivo">
+                            <i class="fas fa-plus"></i> Nuevo Activo
+                        </button>
+                    </div>
+                </div>
+
+                <div class="collapse mt-3" id="filtrosAvanzados">
+                    <div class="bg-light p-3 rounded">
+                        <div class="row g-2">
+                            <div class="col-sm-3">
+                                <label class="small text-muted mb-1">Categoría</label>
+                                <select name="idCategoria" form="frmFiltros" class="form-control form-control-sm">
+                                    <option value="">-- Categoría --</option>
+                                    @if (categorias != null)
+                                    {
+                                        foreach (var c in categorias)
+                                        {
+                                            var selected = (filtroCat.HasValue && filtroCat.Value == (int)c.IdCategoria) ? "selected" : "";
+                                            <option value="@c.IdCategoria" @selected>@c.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label class="small text-muted mb-1">Tipo</label>
+                                <!-- id agregado para el JS -->
+                                <select name="idTipo" id="ddlTipoFiltro" form="frmFiltros" class="form-control form-control-sm">
+                                    <option value="">-- Tipo --</option>
+                                    @if (tipos != null)
+                                    {
+                                        foreach (var t in tipos)
+                                        {
+                                            var selected = (filtroTipo.HasValue && filtroTipo.Value == (int)t.IdTipo) ? "selected" : "";
+                                            <option value="@t.IdTipo" @selected>@t.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label class="small text-muted mb-1">Clase de Activo</label>
+                                <!-- id agregado para el JS -->
+                                <select name="idClase" id="ddlClaseFiltro" form="frmFiltros" class="form-control form-control-sm">
+                                    <option value="">-- Clase --</option>
+                                    @if (clases != null)
+                                    {
+                                        foreach (var c in clases)
+                                        {
+                                            var selected = (filtroClase.HasValue && filtroClase.Value == (int)c.IdClase) ? "selected" : "";
+                                            <option value="@c.IdClase" @selected>@c.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label class="small text-muted mb-1">Departamento</label>
+                                <select name="idDepto" form="frmFiltros" class="form-control form-control-sm">
+                                    <option value="">-- Departamento --</option>
+                                    @if (departamentos != null)
+                                    {
+                                        foreach (var d in departamentos)
+                                        {
+                                            var selected = (filtroDep.HasValue && filtroDep.Value == (int)d.Id_Departamento) ? "selected" : "";
+                                            <option value="@d.Id_Departamento" @selected>@d.Descripcion</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-sm-3 mt-2">
+                                <label class="small text-muted mb-1">Clasificación</label>
+                                <select name="clasificacion" form="frmFiltros" class="form-control form-control-sm">
+                                    <option value="">-- Clasificación --</option>
+                                    @foreach (ActivoClasificacion val in Enum.GetValues(typeof(ActivoClasificacion)))
+                                    {
+                                        var selected = (filtroClasif.HasValue && filtroClasif.Value == val) ? "selected" : "";
+                                        <option value="@val" @selected>@val</option>
+                                    }
+                                </select>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered table-hover text-nowrap" id="tabla-activos">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Tipo</th>
+                                <th>Clase de Activo</th>
+                                <th>Departamento</th>
+                                <th>Clasif.</th>
+                                <th>Serie</th>
+                                <th>Modelo</th>
+                                <th>Placa</th>
+                                <th>Responsable</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @Html.Partial("_ActivosFilas", Model)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+@section modals{
+    <!-- MODAL: Crear Activo (POST clásico) -->
+    <div class="modal fade" id="modalCrearActivo" tabindex="-1" aria-labelledby="lblCrearActivo" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="lblCrearActivo"><i class="fas fa-plus-circle me-1"></i> Nuevo Activo</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                @using (Html.BeginForm("Crear", "Activos", FormMethod.Post, new { id = "frmCrearActivo", @class = "needs-validation", novalidate = "novalidate" }))
+                {
+          <link href="~/Content/solid.min.css" rel="stylesheet" />          @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="row g-3">
+
+                            <!-- ===== Datos generales ===== -->
+                            <div class="col-12">
+                                <fieldset>
+                                    <legend class="h5 mb-2">Datos generales</legend>
+
+                                    <!-- Fila 1: Código, Tipo (req), Clase (req) -->
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Código <span class="text-danger">*</span></label>
+                                            <input name="Codigo" type="text" maxlength="30" class="form-control" required />
+                                            <div class="invalid-feedback">El código es obligatorio.</div>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Tipo <span class="text-danger">*</span></label>
+                                            <select name="IdTipo" class="form-select" required>
+                                                <option value="">-- Seleccione --</option>
+                                                @if (tipos != null)
+                                                {
+                                                    foreach (var t in tipos)
+                                                    {
+                                                        <option value="@t.IdTipo">@t.Nombre</option>
+                                                    }
+                                                }
+                                            </select>
+                                            <div class="invalid-feedback">Seleccione un tipo.</div>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Clase <span class="text-danger">*</span></label>
+                                            <select name="IdClase" class="form-select" required>
+                                                <option value="">-- Seleccione --</option>
+                                                @if (clases != null)
+                                                {
+                                                    foreach (var c in clases)
+                                                    {
+                                                        <option value="@c.IdClase">@c.Nombre</option>
+                                                    }
+                                                }
+                                            </select>
+                                            <div class="invalid-feedback">Seleccione una clase.</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Fila 2: Nombre, Clasificación -->
+                                    <div class="row g-3 mt-1">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                                            <input name="NombreTipo" type="text" maxlength="100" class="form-control" required />
+                                            <div class="invalid-feedback">El nombre es obligatorio.</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Clasificación <span class="text-danger">*</span></label>
+                                            <select name="Clasificacion" class="form-select" required>
+                                                <option value="">-- Seleccione --</option>
+                                                @foreach (ActivoClasificacion val in Enum.GetValues(typeof(ActivoClasificacion)))
+                                                {
+                                                    <option value="@val">@val</option>
+                                                }
+                                            </select>
+                                            <div class="invalid-feedback">Seleccione una clasificación.</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Fila 3: Categoría, Responsable -->
+                                    <div class="row g-3 mt-1">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Categoría <span class="text-danger">*</span></label>
+                                            <select name="IdCategoria" class="form-select" required>
+                                                <option value="">-- Seleccione --</option>
+                                                @if (categorias != null)
+                                                {
+                                                    foreach (var c in categorias)
+                                                    {
+                                                        <option value="@c.IdCategoria">@c.Nombre</option>
+                                                    }
+                                                }
+                                            </select>
+                                            <div class="invalid-feedback">Seleccione una categoría.</div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Responsable</label>
+                                            <select name="IdSolicitante" class="form-select" id="ddlResponsable">
+                                                <option value="">-- Sin responsable --</option>
+                                                @if (solicitantes != null)
+                                                {
+                                                    foreach (var s in solicitantes)
+                                                    {
+                                                        string nom = null, ced = null;
+                                                        try { nom = (string)s.Nombre; } catch { }
+                                                        try { ced = (string)s.Cedula_Solicitante; } catch { }
+                                                        <option value="@s.ID_Usuario">@((nom ?? "-") + (string.IsNullOrWhiteSpace(ced) ? "" : " ("+ced+")"))</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Fila 4: Depto + Fecha Entrega -->
+                                    <div class="row g-3 mt-1">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Departamento</label>
+                                            <select name="Id_Departamento" class="form-select">
+                                                <option value="">-- Sin departamento --</option>
+                                                @if (departamentos != null)
+                                                {
+                                                    foreach (var d in departamentos)
+                                                    {
+                                                        <option value="@d.Id_Departamento">@d.Descripcion</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Fecha de Entrega</label>
+                                            <input name="FechaEntrega" type="date" class="form-control" id="txtFechaEntrega" disabled="disabled" />
+                                            <small class="text-muted">Se habilita si eliges Responsable.</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3 mt-1">
+                                        <div class="col-12">
+                                            <label class="form-label">Descripción</label>
+                                            <textarea name="Descripcion" maxlength="300" class="form-control" rows="3"></textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Otra característica</label>
+                                            <input name="OtraCaracteristica" type="text" maxlength="300" class="form-control" placeholder="Color, accesorios, particularidades…" />
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+
+                            <!-- ===== Uso y ubicación ===== -->
+                            <div class="col-12">
+                                <fieldset class="mt-2">
+                                    <legend class="h5 mb-2">Uso y ubicación</legend>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Ubicación Física</label>
+                                            <input name="UbicacionFisica" type="text" maxlength="150" class="form-control" placeholder="Ej: Sede Central - Piso 3 - Sala A" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Uso Principal</label>
+                                            <input name="UsoPrincipal" type="text" maxlength="150" class="form-control" placeholder="Ej: Estación de trabajo - Diseño" />
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+
+                            <!-- ===== Hardware ===== -->
+                            <div class="col-12">
+                                <fieldset class="mt-2">
+                                    <legend class="h5 mb-2">Hardware</legend>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Serie</label>
+                                            <input name="Serie" type="text" maxlength="80" class="form-control" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Modelo</label>
+                                            <input name="Modelo" type="text" maxlength="120" class="form-control" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Placa / Código de Barras</label>
+                                            <input name="PlacaCodBarras" type="text" maxlength="120" class="form-control" />
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Procesador</label>
+                                            <input name="Procesador" type="text" maxlength="120" class="form-control" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">RAM</label>
+                                            <input name="RAM" type="text" maxlength="120" class="form-control" placeholder="Ej: 16 GB DDR4" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Sistema Operativo</label>
+                                            <input name="SistemaOperativo" type="text" maxlength="120" class="form-control" />
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Disco / Almacenamiento</label>
+                                            <input name="DiscoDuro" type="text" maxlength="120" class="form-control" placeholder="Ej: 512 GB SSD" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Dirección IP</label>
+                                            <input name="IP" type="text" maxlength="50" class="form-control" placeholder="192.168.x.x" />
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+
+                            <!-- ===== Datos de compra (opcional) ===== -->
+                            <div class="col-12">
+                                <fieldset class="mt-2">
+                                    <legend class="h5 mb-2">Datos de compra</legend>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Proveedor</label>
+                                            <select name="IdProveedor" class="form-select">
+                                                <option value="">-- Sin proveedor --</option>
+                                                @if (proveedores != null)
+                                                {
+                                                    foreach (var p in proveedores)
+                                                    {
+                                                        <option value="@p.IdProveedor">@((p.NombreEmpresa ?? p.Nombre) ?? "-")</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">N° Factura</label>
+                                            <input name="NoFactura" type="text" maxlength="60" class="form-control" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Costo</label>
+                                            <input name="Costo" type="number" step="0.01" min="0" class="form-control" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Fecha de Compra</label>
+                                            <input name="FechaCompra" type="date" class="form-control" />
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i> Guardar
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@section estilos{
+    <link rel="stylesheet" href="~/Content/css/Activos.css" />
+}
+
+@section scripts{
+    <!-- Cache-busting para asegurar el JS más reciente -->
+    <script src="~/Scripts/Views/Vista_Activos.js?v=4"></script>
+
+    <script>
+        (function () {
+            var frm = document.getElementById('frmCrearActivo');
+            if (!frm) return;
+            frm.addEventListener('submit', function (event) {
+                if (!frm.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                frm.classList.add('was-validated');
+            }, false);
+        })();
+
+        (function () {
+            var ddl = document.getElementById('ddlResponsable');
+            var fecha = document.getElementById('txtFechaEntrega');
+            if (!ddl || !fecha) return;
+
+            function toggleFecha() {
+                var hasResp = ddl.value && ddl.value.trim() !== "";
+                fecha.disabled = !hasResp;
+                if (!hasResp) fecha.value = "";
+            }
+            ddl.addEventListener('change', toggleFecha);
+            toggleFecha();
+        })();
+    </script>
+}

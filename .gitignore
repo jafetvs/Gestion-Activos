@@ -1,0 +1,44 @@
+# ===========================
+# Visual Studio / .NET
+# ===========================
+
+# Archivos temporales de VS
+.vs/
+**/.vs/**
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Carpetas de compilación
+**/bin/
+**/obj/
+**/Debug/
+**/Release/
+
+# Caches y logs
+*.cache
+*.log
+*.dccache
+
+# ===========================
+# IIS Express / Config VS
+# ===========================
+applicationhost.config
+
+# ===========================
+# Rider / Resharper
+# ===========================
+_ReSharper.Caches/
+
+# ===========================
+# Archivos JSON de layout de VS (no útiles en repo)
+DocumentLayout.json
+DocumentLayout.backup.json
+
+# ===========================
+# Mantener solo lo importante
+# ===========================
+!*.sln
+!*.csproj
+!appsettings*.json

@@ -1,0 +1,55 @@
+@using CapaModelo
+@model IEnumerable<Proveedor>
+
+@functions{
+    string Dash(string s) => string.IsNullOrWhiteSpace(s) ? "—" : s;
+    string D(bool v) => v ? "Sí" : "No";
+    string Dt(DateTime? d) => d.HasValue ? d.Value.ToString("dd/MM/yyyy") : "—";
+    string Web(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return "—";
+        var u = url.Trim();
+        if (!u.StartsWith("http://") && !u.StartsWith("https://")) u = "http://" + u;
+        return $"<a href=\"{u}\" target=\"_blank\" rel=\"noopener\">{System.Web.HttpUtility.HtmlEncode(url)}</a>";
+    }
+}
+
+@if (Model == null || !Model.Any())
+{
+    <tr><td class="text-muted small p-3" colspan="11">Sin resultados…</td></tr>
+}
+else
+{
+    foreach (var p in Model)
+    {
+        <tr data-id="@p.IdProveedor">
+            <td class="col-prov">@Html.Encode(p.NombreEmpresa)</td>
+            <td class="col-serv">@Html.Encode(p.Servicio)</td>
+            <td class="col-contr">@Html.Encode(p.NoContrato)</td>
+            <td class="col-proced">@Html.Encode(p.NoProcedimiento)</td>
+            <td class="col-renov text-center">@D(p.RenovacionContrato)</td>
+            <td class="col-vence">@Dt(p.FechaVencimientoContrato)</td>
+            <td class="col-contacto">@Html.Encode(p.Contacto1_Nombre)</td>
+            <td class="col-correo">@Html.Encode(p.Contacto1_Correo)</td>
+            <td class="col-web">@Html.Raw(Web(p.PaginaWeb))</td>
+            <td class="col-activo text-center">@(p.Activo ? "Sí" : "No")</td>
+            <td class="col-acciones">
+                <div class="btn-group btn-group-sm">
+                    <a class="btn btn-outline-primary" title="Editar"
+                       href="@Url.Action("Editar","Proveedores", new { id = p.IdProveedor })">
+                        <i class="far fa-edit"></i>
+                    </a>
+
+                    @using (Html.BeginForm("Eliminar", "Proveedores", FormMethod.Post, new { @class = "d-inline frm-del" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@p.IdProveedor" />
+                        <button type="button" class="btn btn-outline-danger btn-del" title="Eliminar">
+                            <i class="far fa-trash-alt"></i>
+                        </button>
+                    }
+                </div>
+            </td>
+        </tr>
+    }
+}

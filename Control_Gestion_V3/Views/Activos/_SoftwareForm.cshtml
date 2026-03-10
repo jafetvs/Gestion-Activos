@@ -1,0 +1,132 @@
+@using CapaModelo
+@model CapaModelo.ActivoSoftware
+
+@{
+    var idActivo = (Model?.IdActivo > 0 ? Model.IdActivo : (int)(ViewBag.IdActivo ?? 0));
+    var esNuevo = (Model?.IdSoftware ?? 0) == 0;
+
+    // Prepara valores de tamaño: separa número y unidad si llega como "123 MB"
+    string nroTam = "";
+    string unidadTam = "KB";
+    if (!string.IsNullOrWhiteSpace(Model?.Tamano))
+    {
+        var parts = Model.Tamano.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 1) { nroTam = parts[0]; }
+        if (parts.Length >= 2)
+        {
+            var u = parts[1].ToUpperInvariant();
+            if (u == "GB" || u == "MB" || u == "KB") { unidadTam = u; }
+        }
+    }
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">@((esNuevo) ? "Nuevo software" : "Editar software")</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+
+<div class="modal-body">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" id="swIdActivo" value="@idActivo" />
+    <input type="hidden" id="swIdSoftware" value="@(Model?.IdSoftware ?? 0)" />
+
+    <div class="mb-2">
+        <label class="form-label">Nombre *</label>
+        <input id="swNombre" type="text" class="form-control" maxlength="150"
+               value="@(Model?.Nombre ?? "")" required />
+        <div class="invalid-feedback">El nombre es obligatorio.</div>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Editor</label>
+        <input id="swEditor" type="text" class="form-control" maxlength="150"
+               value="@(Model?.Editor ?? "")" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Fecha instalación</label>
+        <input id="swFechaInst" type="date" class="form-control"
+               value="@(Model?.FechaInstalacion.HasValue == true ? Model.FechaInstalacion.Value.ToString("yyyy-MM-dd") : "")" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Tamaño</label>
+        <div class="input-group">
+            <input id="swTamNum" type="number" min="0" step="0.01" class="form-control" placeholder="Ej: 120"
+                   value="@nroTam" />
+            <select id="swTamUni" class="form-select" style="max-width:130px;">
+                <option value="KB" @(unidadTam == "KB" ? "selected" : "")>KB</option>
+                <option value="MB" @(unidadTam == "MB" ? "selected" : "")>MB</option>
+                <option value="GB" @(unidadTam == "GB" ? "selected" : "")>GB</option>
+            </select>
+        </div>
+        <div class="form-text">Se guardará como un texto (ej: "120 MB").</div>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Versión</label>
+        <input id="swVersion" type="text" class="form-control" maxlength="50"
+               value="@(Model?.Version ?? "")" />
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <button type="button" class="btn btn-primary" id="btnGuardarSoftware">Guardar</button>
+</div>
+
+<script>
+    (function () {
+        function inval(el, on) { if (on) el.classList.add('is-invalid'); else el.classList.remove('is-invalid'); }
+
+        $("#btnGuardarSoftware").on("click", function () {
+            var idSoftware = parseInt($("#swIdSoftware").val() || 0, 10);
+            var url = (idSoftware === 0) ? window.SW_CFG.routes.add : window.SW_CFG.routes.edit;
+
+            var idActivo = $("#swIdActivo").val();
+            var nombre = ($("#swNombre").val() || "").trim();
+            var editor = ($("#swEditor").val() || "").trim();
+            var fechaInst = $("#swFechaInst").val(); // yyyy-MM-dd o ""
+            var tamNum = ($("#swTamNum").val() || "").trim();
+            var tamUni = $("#swTamUni").val() || "KB";
+            var version = ($("#swVersion").val() || "").trim();
+
+            inval(document.getElementById('swNombre'), !nombre);
+            if (!nombre) return;
+
+            // Armar "Tamano" como texto "n UM" o null si vacío
+            var tamano = null;
+            if (tamNum !== "") tamano = tamNum + " " + tamUni;
+
+            var $btn = $(this).prop('disabled', true);
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                    idSoftware: idSoftware,
+                    idActivo: idActivo,
+                    nombre: nombre,
+                    editor: editor,
+                    fechaInstalacion: fechaInst || null,
+                    tamano: tamano,
+                    version: version
+                }
+            }).done(function (res) {
+                if (res && res.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('modalSoftware')).hide();
+                    // recarga la lista (a la página 1 para ver lo último)
+                    window.sw_irPagina(1);
+                } else {
+                    alert((res && res.msg) || "No se pudo guardar.");
+                }
+            }).fail(function () {
+                alert("Error de red.");
+            }).always(function () {
+                $btn.prop('disabled', false);
+            });
+        });
+    })();
+</script>

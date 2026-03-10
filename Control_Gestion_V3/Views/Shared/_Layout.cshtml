@@ -1,0 +1,248 @@
+﻿
+@using Control_Gestion_V3.NavBar;
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title Gestión Documental</title>
+
+
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+
+
+    @Styles.Render("~/Content/css")
+    @Styles.Render("~/JQUERY_UI/CalendariosCSS")
+    @Styles.Render("~/Content/fullcalendarCSS")
+    @RenderSection("estilos", required: false)
+
+
+    <style>
+        .personalizado-btn {
+            background-color: #20c8e5; /* Cambiar color de fondo al pasar el mouse */
+            color: #fff; /* Cambiar color del texto al pasar el mouse */
+        }
+    </style>
+
+</head>
+
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand">
+        <!-- Navbar Brand-->
+        <a class="navbar-brand ps-3" href="#">Atenas Interno</a>
+        <!-- Sidebar Toggle-->
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0 personalizado-btn" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+        <nav class="d-none d-md-inline-block form-inline ms-auto me-0  my-2 my-md-0">
+            <ul class="navbar-nav ms-auto ms-md-0  me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user fa-fw"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <!--
+                            <li> <a class="dropdown-item">@ViewBag.NombreUsuario</a></li> -->
+                        <li><a class="dropdown-item" href="@Url.Action("perfil", "Usuario", new { cedula = ViewBag.Cedula })">@ViewBag.NombreUsuario</a></li>
+                        <li><a class="dropdown-item" href="@Url.Action("Salir", "Login")">Salir</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </nav>
+    <div id="layoutSidenav">
+
+        <!-- Sidebar Menu -->
+        <div id="layoutSidenav_nav">
+
+
+            <nav class="sb-sidenav accordion" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Principal</div>
+                        <a class="nav-link" href="@Url.Action("Index", "Home")">
+                            <div class="sb-nav-link-icon"><i class="fas fa-home"></i></div>
+                            Inicio
+                        </a>
+                        @Html.ActionLinkAllow()
+
+                        <a class="nav-link" href="@Url.Action("Salir", "Login")">
+                            <div class="sb-nav-link-icon"><i class="far fa-share-square"></i></div>
+                            Salir
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    @RenderBody()
+                </div>
+            </main>
+            <hr />
+            <footer>
+                <p>&copy; @DateTime.Now.Year - Tecnologías de Información </p>
+            </footer>
+
+
+        </div>
+    </div>
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/Content/jqueryval")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/Complementos")
+    @Scripts.Render("~/JQUERY_UI/Calendarios")
+    @Scripts.Render("~/Content/tablas")
+    @Scripts.Render("~/bundles/fullcalendar")
+    @Scripts.Render("~/bundles/bootstrap")
+
+
+
+
+
+<script type="text/javascript">
+         // Controlador de URLs
+        $.extend({ MisUrls: { url: {}, urls: function (a) { $.extend($.MisUrls.url, a); } } });
+
+         //CONTROLADOR ROL
+         $.MisUrls.urls({ _ObtenerRoles: '@Url.Action("Obtener", "Rol")' });
+         $.MisUrls.urls({ _GuardarRol: '@Url.Action("Guardar", "Rol")' });
+         $.MisUrls.urls({ _EliminarRol: '@Url.Action("Eliminar", "Rol")' });
+
+          //CONTROLADOR PERMISOS
+         $.MisUrls.urls({ _ObtenerPermisos: '@Url.Action("Obtener", "Permisos")' });
+         $.MisUrls.urls({ _GuardarPermisos: '@Url.Action("Guardar", "Permisos")' });
+
+
+          //CONTROLADOR USUARIOS/INGRESOS
+         $.MisUrls.urls({ _ObtenerUsuarios: '@Url.Action("Obtener", "Usuario")' });
+         $.MisUrls.urls({ _GuardarUsuario: '@Url.Action("Guardar", "Usuario")' });
+         $.MisUrls.urls({ _EliminarUsuario: '@Url.Action("Eliminar", "Usuario")' });
+
+
+         //CONTROLADOR SOLICITANTES/PARTES
+         $.MisUrls.urls({ _ObtenerSolicitates: '@Url.Action("Obtener", "Solicitantes")' });
+         $.MisUrls.urls({ _GuardarSolicitantes: '@Url.Action("Guardar", "Solicitantes")' });
+         $.MisUrls.urls({ _EliminarSolicitantes: '@Url.Action("Eliminar", "Solicitantes")' });
+
+
+      //CONTROLADOR PERFIL USUARIO
+         $.MisUrls.urls({ _ObtenerUnSolicitante: '@Url.Action("ObtenerSolicitante", "Prefil")' });
+         $.MisUrls.urls({ _ModificarPerfil: '@Url.Action("Modificar", "Prefil")' });
+
+
+           //CONTROLADOR ABOGADOS
+         $.MisUrls.urls({ _ObtenerAbogados: '@Url.Action("Obtener", "Abogados")' });
+         $.MisUrls.urls({ _GuardarAbogados: '@Url.Action("Guardar", "Abogados")' });
+         $.MisUrls.urls({ _EliminarAbogados: '@Url.Action("Eliminar", "Abogados")' });
+
+          //Obtener Procedencias
+         $.MisUrls.urls({ _ObtenerProcedencia: '@Url.Action("Obtener", "Procedencia")' });
+         $.MisUrls.urls({ _GuardarProcedencia: '@Url.Action("Guardar", "Procedencia")' });
+         $.MisUrls.urls({ _EliminarProcedencia: '@Url.Action("Eliminar", "Procedencia")' });
+
+          //Obtener Departamentos
+         $.MisUrls.urls({ _ObtenerDepartamentos: '@Url.Action("Obtener", "Departamentos")' });
+         $.MisUrls.urls({ _GuardarDepartamentos: '@Url.Action("Guardar", "Departamentos")' });
+        $.MisUrls.urls({ _EliminarDepartamento: '@Url.Action("Eliminar", "Departamentos")' });
+
+    // CONTROLADOR ACTIVOS
+    $.MisUrls.urls({ _ObtenerActivos: '@Url.Action("Obtener", "Activos")' });
+    $.MisUrls.urls({ _GuardarActivo: '@Url.Action("Crear", "Activos")' });
+    $.MisUrls.urls({ _EliminarActivo: '@Url.Action("Eliminar", "Activos")' });
+    $.MisUrls.urls({ _ExportarExcelActivos: '@Url.Action("ExportarExcel", "Activos")' });
+    $.MisUrls.urls({ _ExportarPdfActivos: '@Url.Action("ExportarPdf", "Activos")' });
+
+          //Tipo de Gestión
+         $.MisUrls.urls({ _ObtenerTipoGestion: '@Url.Action("Obtener", "TipoGestion")' });
+         $.MisUrls.urls({ _GuardarTipoGestion: '@Url.Action("Guardar", "TipoGestion")' });
+         $.MisUrls.urls({ _EliminarTipoGestion: '@Url.Action("Eliminar", "TipoGestion")' });
+
+          //Tipos de Documentos
+          $.MisUrls.urls({ _ObtenerTiposDocumentos: '@Url.Action("Obtener", "TipoDocumentos")' });
+          $.MisUrls.urls({ _GuardarTiposDocumentos: '@Url.Action("Guardar", "TipoDocumentos")' });
+          $.MisUrls.urls({ _EliminarTiposDocumentos: '@Url.Action("Eliminar", "TipoDocumentos")' });
+
+
+
+
+          //CONTROLADOR CASOS USUARIO
+         $.MisUrls.urls({ _ObtenerMisCasos: '@Url.Action("Obtener", "MisCasos")' });
+         $.MisUrls.urls({ _GuardarMisCasos: '@Url.Action("Guardar", "MisCasos")' });
+
+         //CONTROLADOR CASOS USUARIO
+         $.MisUrls.urls({ _ObtenerCasos: '@Url.Action("Obtener", "Casos")' });
+         $.MisUrls.urls({ _GuardarMisCasos: '@Url.Action("Guardar", "MisCasos")' });
+
+        // CONTROLADOR INTERVENCIONES
+        $.MisUrls.urls({_ObtenerIntervenciones: '@Url.Action("Obtener", "Intervenciones")' });
+        $.MisUrls.urls({_GuardarIntervenciones: '@Url.Action("Guardar", "Intervenciones")' });
+
+
+
+        $.MisUrls.urls({ _GuardarCaso: '@Url.Action("Guardar", "Casos")' });
+        $.MisUrls.urls({ _MostrarUnCaso: '@Url.Action("Detalles", "Casos")' });
+        $.MisUrls.urls({ _FiltroCasos: '@Url.Action("Filtrar", "CasosFiltros")' });
+
+
+        // TIEMPO LABORAL
+        $.MisUrls.urls({ _TiempoLaboral: '@Url.Action("Obtener", "Tiempos")' });
+
+        // CONTROL DE CONSULTAS
+      //  $.MisUrls.urls({ _ObtenerConsulta: '@Url.Action("Obtener", "Consulta")' });
+      //  $.MisUrls.urls({ _GuardarConsulta: '@Url.Action("Guardar", "Consulta")' });
+
+         //CONTROLADOR NOMBRE DOCUMENTOS
+         $.MisUrls.urls({ _ObtenerNomDocumentos: '@Url.Action("Obtener", "NomDocumento")' });
+         $.MisUrls.urls({ _GuardarNomDocumento: '@Url.Action("Guardar", "NomDocumento")' });
+         $.MisUrls.urls({ _EliminarNomDocumento: '@Url.Action("Eliminar", "NomDocumento")' });
+
+
+         //CONTROLADOR NOMBRE DOCUMENTOS
+         $.MisUrls.urls({ _ObtenerDocumentos: '@Url.Action("Obtener", "Documentos")' });
+
+
+         //PISTAS DE AUDITORIAS
+        $.MisUrls.urls({ _ObtenerAuditoria: '@Url.Action("Obtener", "Auditorias")' });
+
+          //PISTAS DE CONSULTAS ABOGADOS
+          $.MisUrls.urls({ _ObtenerConsultasAbogados: '@Url.Action("Obtener", "Consultas")' });
+          $.MisUrls.urls({ _GuardarConsultaAbogados: '@Url.Action("Guardar", "Consultas")' });
+          $.MisUrls.urls({ _EliminarConsultas: '@Url.Action("Eliminar", "Consultas")' });
+
+
+
+
+
+
+         // Configuración del lenguaje español para DataTables
+         $.MisUrls.urls({ Url_datatable_spanish: '@Url.Content("/Content/DataTables/datatable_spanish.json")' });
+</script>
+    <script>
+        function activarMenu(menuactivo) {
+            // Busca todos los enlaces dentro del menú lateral
+            var menuItems = document.querySelectorAll(".sb-sidenav-menu .nav-link");
+
+            menuItems.forEach(function (link) {
+                // Limpia previamente cualquier clase "active"
+                link.classList.remove("active");
+
+                // Verifica si el atributo "name" coincide con el menú activo
+                if (link.getAttribute("name") === menuactivo) {
+                    link.classList.add("active");
+                }
+            });
+        }
+    </script>
+    @* --- Punto de montaje para modales globales --- *@
+    @RenderSection("modals", required: false)
+    @RenderSection("scripts", required: false)
+
+</body>
+
+</html>

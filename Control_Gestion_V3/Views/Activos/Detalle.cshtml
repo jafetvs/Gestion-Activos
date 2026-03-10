@@ -1,0 +1,885 @@
+@using CapaModelo
+@model CapaModelo.Activo
+
+@{
+    ViewBag.Title = "Detalle de Activo";
+
+    var categorias = ViewBag.Categorias as IEnumerable<dynamic>;
+    var departamentos = ViewBag.Departamentos as IEnumerable<dynamic>;
+    var solicitantes = ViewBag.Solicitantes as IEnumerable<dynamic>;
+
+    // Se asume que ViewBag.Proveedores trae SOLO proveedores activos
+    var proveedores = ViewBag.Proveedores as IEnumerable<dynamic>;
+
+    // Opcional: el proveedor actual obtenido por ID, sin filtrar por estado (podría estar inactivo)
+    var proveedorActualObj = ViewBag.ProveedorActual as dynamic;
+
+    // colecciones para Tipo y Clase
+    var tipos = ViewBag.Tipos as IEnumerable<dynamic>;
+    var clases = ViewBag.Clases as IEnumerable<dynamic>;
+
+    string Dash(object v) => (v == null || string.IsNullOrWhiteSpace(v.ToString())) ? "—" : v.ToString();
+
+    Func<int, string> CatName = id =>
+    {
+        if (categorias != null)
+            foreach (var c in categorias) { try { if ((int)c.IdCategoria == id) return (string)c.Nombre; } catch { } }
+        return "—";
+    };
+
+    Func<int?, string> DeptoName = id =>
+    {
+        if (!id.HasValue) return "—";
+        if (departamentos != null)
+            foreach (var d in departamentos) { try { if ((int)d.Id_Departamento == id.Value) return (string)d.Descripcion; } catch { } }
+        return "—";
+    };
+
+    Func<int?, string> RespNameCed = id =>
+    {
+        if (!id.HasValue || id.Value <= 0 || solicitantes == null) return "—";
+        foreach (var s in solicitantes)
+        {
+            try
+            {
+                if ((int)s.ID_Usuario == id.Value)
+                {
+                    string nom = null, ced = null;
+                    try { nom = (string)s.Nombre; } catch { }
+                    try { ced = (string)s.Cedula_Solicitante; } catch { }
+                    nom = string.IsNullOrWhiteSpace(nom) ? "—" : nom;
+                    return string.IsNullOrWhiteSpace(ced) ? nom : (nom + " (" + ced + ")");
+                }
+            }
+            catch { }
+        }
+        return "—";
+    };
+
+    // helpers Tipo / Clase
+    Func<int?, string> TipoName = id =>
+    {
+        if (!id.HasValue || id.Value <= 0 || tipos == null) return "—";
+        foreach (var t in tipos) { try { if ((int)t.IdTipo == id.Value) return (string)t.Nombre; } catch { } }
+        return "—";
+    };
+    Func<int?, string> ClaseName = id =>
+    {
+        if (!id.HasValue || id.Value <= 0 || clases == null) return "—";
+        foreach (var c in clases) { try { if ((int)c.IdClase == id.Value) return (string)c.Nombre; } catch { } }
+        return "—";
+    };
+
+    // *** CRITERIO CRÍTICO POR CLASE ***
+    bool esCritico = false;
+    if (clases != null)
+    {
+        int idClase = Model.IdClase;
+        foreach (var c in clases)
+        {
+            try
+            {
+                if ((int)c.IdClase == idClase)
+                {
+                    var nomClase = ((string)c.Nombre ?? "").Trim();
+                    esCritico = string.Equals(nomClase, "Activos Críticos", StringComparison.OrdinalIgnoreCase);
+                    break;
+                }
+            }
+            catch { }
+        }
+    }
+
+    // ====== PROVEEDOR: solo usamos NombreEmpresa ======
+
+    // 1) ¿el proveedor actual está en la lista de activos?
+    bool provActualEnActivos = false;
+    if (Model.IdProveedor.HasValue && proveedores != null)
+    {
+        foreach (var p in proveedores)
+        {
+            try { if ((int)p.IdProveedor == Model.IdProveedor.Value) { provActualEnActivos = true; break; } } catch { }
+        }
+    }
+
+    // 2) Obtener el NombreEmpresa del proveedor actual
+    Func<string> NombreEmpresaActual = () =>
+    {
+        if (!Model.IdProveedor.HasValue || Model.IdProveedor.Value <= 0) return "—";
+
+        // a) Buscar entre activos
+        if (proveedores != null)
+        {
+            foreach (var p in proveedores)
+            {
+                try
+                {
+                    if ((int)p.IdProveedor == Model.IdProveedor.Value)
+                    {
+                        try
+                        {
+                            var emp = (string)p.NombreEmpresa;
+                            return string.IsNullOrWhiteSpace(emp) ? $"ID #{Model.IdProveedor.Value}" : emp;
+                        }
+                        catch { return $"ID #{Model.IdProveedor.Value}"; }
+                    }
+                }
+                catch { }
+            }
+        }
+
+        // b) Si no está entre activos, intenta con ViewBag.ProveedorActual (inactivo)
+        if (proveedorActualObj != null)
+        {
+            try
+            {
+                if ((int)proveedorActualObj.IdProveedor == Model.IdProveedor.Value)
+                {
+                    try
+                    {
+                        var emp = (string)proveedorActualObj.NombreEmpresa;
+                        return string.IsNullOrWhiteSpace(emp) ? $"ID #{Model.IdProveedor.Value}" : emp;
+                    }
+                    catch { return $"ID #{Model.IdProveedor.Value}"; }
+                }
+            }
+            catch { }
+        }
+
+        // c) fallback
+        return $"ID #{Model.IdProveedor.Value}";
+    };
+
+    // 3) Lista para el select: activos + (solo el actual si está inactivo)
+    var provLista = new List<dynamic>();
+    if (proveedores != null) { foreach (var p in proveedores) { provLista.Add(p); } }
+    if (Model.IdProveedor.HasValue && !provActualEnActivos && proveedorActualObj != null)
+    { provLista.Add(proveedorActualObj); }
+
+    string backUrl = Url.Action("Activos", "Activos");
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h1 class="mb-1">Detalle de Activo</h1>
+                <div class="text-muted">
+                    <strong>@Html.Encode(Model.Codigo)</strong> — @Html.Raw(Dash(Model.NombreTipo))
+                </div>
+                <div class="small mt-1">
+                    <span class="badge bg-secondary">Tipo: @TipoName(Model.IdTipo)</span>
+                    <span class="badge bg-secondary ms-1">Clase: @ClaseName(Model.IdClase)</span>
+                    @if (!string.IsNullOrWhiteSpace(Model.UbicacionFisica))
+                    {
+                        <span class="badge bg-light text-dark ms-1">Ubicación: @Model.UbicacionFisica</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.UsoPrincipal))
+                    {
+                        <span class="badge bg-light text-dark ms-1">Uso: @Model.UsoPrincipal</span>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a href="@backUrl" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-warning">
+                        <i class="fas fa-file-export"></i> Exportar todo
+                    </button>
+                    <button type="button" class="btn btn-warning dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="visually-hidden">Toggle</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <li>
+                            <a class="dropdown-item" href="@Url.Action("ExportarExcel","Activos")">
+                                <i class="far fa-file-excel me-2"></i> Excel (.xlsx)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="@Url.Action("ExportarPdf","Activos")" target="_blank" rel="noopener">
+                                <i class="far fa-file-pdf me-2"></i> PDF (.pdf)
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <ul class="nav nav-pills card-header-pills" id="tabsActivo" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-resumen" data-bs-toggle="tab" data-bs-target="#pane-resumen" type="button" role="tab" aria-controls="pane-resumen" aria-selected="true">
+                            <i class="far fa-file-alt"></i> Resumen
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-compra" data-bs-toggle="tab" data-bs-target="#pane-compra" type="button" role="tab" aria-controls="pane-compra" aria-selected="false">
+                            <i class="fas fa-shopping-cart"></i> Datos de compra
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-hw" data-bs-toggle="tab" data-bs-target="#pane-hw" type="button" role="tab" aria-controls="pane-hw" aria-selected="false">
+                            <i class="fas fa-desktop"></i> Hardware
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-sw" data-bs-toggle="tab" data-bs-target="#pane-sw" type="button" role="tab" aria-controls="pane-sw" aria-selected="false">
+                            <i class="fas fa-laptop-code"></i> Software
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-mnt" data-bs-toggle="tab" data-bs-target="#pane-mnt" type="button" role="tab" aria-controls="pane-mnt" aria-selected="false">
+                            <i class="fas fa-tools"></i> Mantenimientos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-mov" data-bs-toggle="tab" data-bs-target="#pane-mov" type="button" role="tab" aria-controls="pane-mov" aria-selected="false">
+                            <i class="fas fa-exchange-alt"></i> Movimientos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-adj" data-bs-toggle="tab" data-bs-target="#pane-adj" type="button" role="tab" aria-controls="pane-adj" aria-selected="false">
+                            <i class="fas fa-paperclip"></i> Adjuntos
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body">
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["Ok"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData["Ok"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <div class="tab-content" id="tabContentActivo">
+
+                    <!-- ============ RESUMEN ============ -->
+                    <div class="tab-pane fade show active" id="pane-resumen" role="tabpanel" aria-labelledby="tab-resumen">
+                        @using (Html.BeginForm("EditarResumen", "Activos", FormMethod.Post, new { @class = "row g-3" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.Hidden("IdActivo", Model.IdActivo)
+
+                            <div class="col-md-4">
+                                <label class="form-label">Código <span class="text-danger">*</span></label>
+                                <input name="Codigo" value="@Model.Codigo" class="form-control" required />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Nombre / Tipo <span class="text-danger">*</span></label>
+                                <input name="NombreTipo" value="@Model.NombreTipo" class="form-control" required />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Clasificación <span class="text-danger">*</span></label>
+                                <select name="Clasificacion" class="form-select" required>
+                                    @foreach (ActivoClasificacion val in Enum.GetValues(typeof(ActivoClasificacion)))
+                                    {
+                                        <option value="@val" @(Model.Clasificacion == val ? "selected" : null)>@val</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Descripción</label>
+                                <textarea name="Descripcion" class="form-control" rows="3">@Model.Descripcion</textarea>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Categoría <span class="text-danger">*</span></label>
+                                <select name="IdCategoria" class="form-select" required>
+                                    @if (categorias != null)
+                                    {
+                                        foreach (var c in categorias)
+                                        {
+                                            <option value="@c.IdCategoria" @(Model.IdCategoria == (int)c.IdCategoria ? "selected" : null)>@c.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Departamento</label>
+                                <select name="Id_Departamento" class="form-select">
+                                    <option value="">—</option>
+                                    @if (departamentos != null)
+                                    {
+                                        foreach (var d in departamentos)
+                                        {
+                                            var sel = Model.Id_Departamento.HasValue && Model.Id_Departamento.Value == (int)d.Id_Departamento ? "selected" : null;
+                                            <option value="@d.Id_Departamento" @sel>@d.Descripcion</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Responsable</label>
+                                <select name="IdSolicitante" class="form-select">
+                                    <option value="">—</option>
+                                    @if (solicitantes != null)
+                                    {
+                                        foreach (var s in solicitantes)
+                                        {
+                                            var sel = Model.IdSolicitante.HasValue && Model.IdSolicitante.Value == (int)s.ID_Usuario ? "selected" : null;
+                                            string nom = null, ced = null;
+                                            try { nom = (string)s.Nombre; } catch { }
+                                            try { ced = (string)s.Cedula_Solicitante; } catch { }
+                                            <option value="@s.ID_Usuario" @sel>@((nom ?? "-") + (string.IsNullOrWhiteSpace(ced) ? "" : " ("+ced+")"))</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Otra característica</label>
+                                <input name="OtraCaracteristica" value="@Model.OtraCaracteristica" class="form-control" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha de entrega</label>
+                                <input type="date" name="FechaEntrega" value="@(Model.FechaEntrega?.ToString("yyyy-MM-dd"))" class="form-control" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo <span class="text-danger">*</span></label>
+                                <select name="IdTipo" class="form-select" required>
+                                    @if (tipos != null)
+                                    {
+                                        foreach (var t in tipos)
+                                        {
+                                            var sel = Model.IdTipo == (int)t.IdTipo ? "selected" : null;
+                                            <option value="@t.IdTipo" @sel>@t.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Clase <span class="text-danger">*</span></label>
+                                <select name="IdClase" class="form-select" required>
+                                    @if (clases != null)
+                                    {
+                                        foreach (var c in clases)
+                                        {
+                                            var sel = Model.IdClase == (int)c.IdClase ? "selected" : null;
+                                            <option value="@c.IdClase" @sel>@c.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Ubicación física</label>
+                                <input name="UbicacionFisica" value="@Model.UbicacionFisica" class="form-control" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Uso principal</label>
+                                <input name="UsoPrincipal" value="@Model.UsoPrincipal" class="form-control" />
+                            </div>
+
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> Guardar
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- ============ DATOS DE COMPRA ============ -->
+                    <div class="tab-pane fade" id="pane-compra" role="tabpanel" aria-labelledby="tab-compra">
+                        @using (Html.BeginForm("EditarCompra", "Activos", FormMethod.Post, new { @class = "row g-3", id = "form-compra" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.Hidden("IdActivo", Model.IdActivo)
+
+                            @* ======= BLOQUE PROVEEDOR (solo Activos Críticos) ======= *@
+                            if (esCritico)
+                            {
+                                // Hidden que SIEMPRE se envía: conserva el valor si no cambian nada.
+                                @Html.Hidden("IdProveedor", Model.IdProveedor.HasValue ? (object)Model.IdProveedor.Value : null)
+
+                                <div class="col-12">
+                                    <label class="form-label d-block">Proveedor (opcional)</label>
+
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <div class="form-control-plaintext">
+                                            @{
+                                                var nombreActual = NombreEmpresaActual();
+                                                if (string.IsNullOrWhiteSpace(nombreActual) || nombreActual == "—")
+                                                {
+                                                    @:<span class="text-muted">—</span>
+                                                }
+                                                else
+                                                {
+                                                    if (!provActualEnActivos && Model.IdProveedor.HasValue)
+                                                    {
+                                                        <span>@nombreActual</span>
+                                                        <span class="badge bg-warning text-dark ms-2">inactivo</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@nombreActual</span>
+                                                    }
+                                                }
+                                            }
+                                        </div>
+
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnToggleProveedor">
+                                            <i class="fas fa-exchange-alt"></i> Cambiar
+                                        </button>
+                                    </div>
+
+                                    <div id="zonaCambioProveedor" class="mt-2" style="display:none;">
+                                        <div class="input-group">
+                                            <select id="selProveedor" class="form-select">
+                                                <option value="">—</option>
+                                                @if (provLista != null && provLista.Count > 0)
+                                                {
+                                                    foreach (var p in provLista)
+                                                    {
+                                                        if (p == null) { continue; }
+
+                                                        string texto = "-";
+                                                        try { texto = (string)p.NombreEmpresa; } catch { }
+                                                        if (string.IsNullOrWhiteSpace(texto)) { texto = "-"; }
+
+                                                        bool esOpcionActual = Model.IdProveedor.HasValue && ((int)p.IdProveedor == Model.IdProveedor.Value);
+                                                        bool marcarInactivoEnTexto = esOpcionActual && !provActualEnActivos;
+
+                                                        <option value="@p.IdProveedor" @(esOpcionActual ? "selected" : null)>
+                                                            @texto@(marcarInactivoEnTexto ? " (inactivo)" : "")
+                                                        </option>
+                                                    }
+                                                }
+                                            </select>
+                                            <button type="button" id="btnAplicarProveedor" class="btn btn-outline-success">
+                                                Aplicar
+                                            </button>
+                                            <button type="button" id="btnCancelarProveedor" class="btn btn-outline-secondary">
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            Si no aplicas cambios, se conservará el proveedor actual.
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                // No mostrar proveedor; mantener valor (si existe) para no perderlo
+                                if (Model.IdProveedor.HasValue)
+                                {
+                                    @Html.Hidden("IdProveedor", Model.IdProveedor.Value)
+                                }
+                            }
+
+                            <div class="col-md-4">
+                                <label class="form-label">N° Factura</label>
+                                <input name="NoFactura" value="@Model.NoFactura" class="form-control" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Costo</label>
+                                <input type="number" step="0.01" min="0" name="Costo" value="@(Model.Costo?.ToString("0.##"))" class="form-control" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Fecha de compra</label>
+                                <input type="date" name="FechaCompra" value="@(Model.FechaCompra?.ToString("yyyy-MM-dd"))" class="form-control" />
+                            </div>
+
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> Guardar
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- ============ HARDWARE ============ -->
+                    <div class="tab-pane fade" id="pane-hw" role="tabpanel" aria-labelledby="tab-hw">
+                        @using (Html.BeginForm("EditarHardware", "Activos", FormMethod.Post, new { @class = "row g-3" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.Hidden("IdActivo", Model.IdActivo)
+
+                            <div class="col-md-3">
+                                <label class="form-label">Serie</label>
+                                <input name="Serie" value="@Model.Serie" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Modelo</label>
+                                <input name="Modelo" value="@Model.Modelo" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Placa / Código de barras</label>
+                                <input name="PlacaCodBarras" value="@Model.PlacaCodBarras" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">IP</label>
+                                <input name="IP" value="@Model.IP" class="form-control" />
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Procesador</label>
+                                <input name="Procesador" value="@Model.Procesador" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">RAM</label>
+                                <input name="RAM" value="@Model.RAM" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Sistema Operativo</label>
+                                <input name="SistemaOperativo" value="@Model.SistemaOperativo" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Disco / Almacenamiento</label>
+                                <input name="DiscoDuro" value="@Model.DiscoDuro" class="form-control" />
+                            </div>
+
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> Guardar
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- ============ SOFTWARE (AJAX) ============ -->
+                    <div class="tab-pane fade" id="pane-sw" role="tabpanel" aria-labelledby="tab-sw">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="hdnIdActivo" value="@Model.IdActivo" />
+
+                        <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+                            <div>
+                                <label class="form-label mb-1">Desde</label>
+                                <input type="date" class="form-control form-control-sm" id="swDesde" />
+                            </div>
+                            <div>
+                                <label class="form-label mb-1">Hasta</label>
+                                <input type="date" class="form-control form-control-sm" id="swHasta" />
+                            </div>
+
+                            <div class="ms-auto">
+                                <label class="form-label mb-1">Buscar (nombre / editor)</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="txtBuscarSw" placeholder="Ej. Chrome, Adobe…" />
+                                    <button class="btn btn-outline-secondary" id="btnBuscarSw"><i class="fas fa-search"></i></button>
+                                    <button class="btn btn-outline-secondary" id="btnLimpiarSw" title="Limpiar"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-sm btn-primary" id="btnNuevoSw">
+                                <i class="fas fa-plus"></i> Nuevo software
+                            </button>
+                        </div>
+
+                        <div id="zona-software" class="border rounded p-2 bg-white">
+                            <div class="text-muted small">Cargando software…</div>
+                        </div>
+                    </div>
+
+                    <!-- ============ MANTENIMIENTOS (AJAX) ============ -->
+                    <div class="tab-pane fade" id="pane-mnt" role="tabpanel" aria-labelledby="tab-mnt">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="hdnIdActivo2" value="@Model.IdActivo" />
+
+                        <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+                            <div>
+                                <label class="form-label mb-1">Desde</label>
+                                <input type="date" class="form-control form-control-sm" id="fMnDesde" />
+                            </div>
+                            <div>
+                                <label class="form-label mb-1">Hasta</label>
+                                <input type="date" class="form-control form-control-sm" id="fMnHasta" />
+                            </div>
+
+                            <div>
+                                <label class="form-label mb-1">Tipo</label>
+                                <select id="mnTipoFiltro" class="form-select form-select-sm">
+                                    <option value="">(Todos)</option>
+                                    <option>Preventivo</option>
+                                    <option>Correctivo</option>
+                                    <option>Predictivo</option>
+                                    <option>Inspección</option>
+                                    <option>Calibración</option>
+                                    <option>Limpieza</option>
+                                    <option>Actualización</option>
+                                    <option>Reparación</option>
+                                </select>
+                            </div>
+
+                            <div class="ms-auto">
+                                <label class="form-label mb-1">Buscar (detalle / responsable)</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="txtBuscarMnt" placeholder="Ej. filtro, Juan, cédula…" />
+                                    <button class="btn btn-outline-secondary" id="btnBuscarMnt"><i class="fas fa-search"></i></button>
+                                    <button class="btn btn-outline-secondary" id="btnLimpiarMnt" title="Limpiar"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-sm btn-primary" id="btnNuevoMnt">
+                                <i class="fas fa-plus"></i> Nuevo mantenimiento
+                            </button>
+                        </div>
+
+                        <div id="zona-mantenimientos" class="border rounded p-2 bg-white">
+                            <div class="text-muted small">Cargando mantenimientos…</div>
+                        </div>
+                    </div>
+
+                    <!-- ============ MOVIMIENTOS (AJAX) ============ -->
+                    <div class="tab-pane fade" id="pane-mov" role="tabpanel" aria-labelledby="tab-mov">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="hdnIdActivo3" value="@Model.IdActivo" />
+
+                        <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+                            <div>
+                                <label class="form-label mb-1">Desde</label>
+                                <input type="date" class="form-control form-control-sm" id="fDesde" />
+                            </div>
+                            <div>
+                                <label class="form-label mb-1">Hasta</label>
+                                <input type="date" class="form-control form-control-sm" id="fHasta" />
+                            </div>
+
+                            <div class="ms-auto">
+                                <label class="form-label mb-1">Buscar (detalle / responsable)</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="txtBuscarMov" placeholder="Ej. Nombre o cédula" />
+                                    <button class="btn btn-outline-secondary" id="btnBuscarMov"><i class="fas fa-search"></i></button>
+                                    <button class="btn btn-outline-secondary" id="btnLimpiarMov" title="Limpiar"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-sm btn-primary" id="btnNuevoMov">
+                                <i class="fas fa-plus"></i> Nuevo movimiento
+                            </button>
+                        </div>
+
+                        <div id="zona-movimientos" class="border rounded p-2 bg-white">
+                            <div class="text-muted small">Cargando movimientos...</div>
+                        </div>
+                    </div>
+
+                    <!-- ============ ADJUNTOS (AJAX) ============ -->
+                    <div class="tab-pane fade" id="pane-adj" role="tabpanel" aria-labelledby="tab-adj">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="hdnIdActivo4" value="@Model.IdActivo" />
+
+                        <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+                            <div class="ms-auto">
+                                <label class="form-label mb-1">Buscar (nombre)</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="txtBuscarAdj" placeholder="Ej. factura.pdf, inventario.xlsx…" />
+                                    <button class="btn btn-outline-secondary" id="btnBuscarAdj"><i class="fas fa-search"></i></button>
+                                    <button class="btn btn-outline-secondary" id="btnLimpiarAdj" title="Limpiar"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-sm btn-primary" id="btnNuevoAdj">
+                                <i class="fas fa-plus"></i> Subir adjunto
+                            </button>
+                        </div>
+
+                        <div id="zona-adjuntos" class="border rounded p-2 bg-white">
+                            <div class="text-muted small">Cargando adjuntos…</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section estilos{
+    <link rel="stylesheet" href="~/Content/css/Activos.css" />
+}
+
+@section scripts{
+    <script>
+        (function () {
+            function getQS(name) {
+                var m = new RegExp('[?&]' + name + '=([^&#]*)').exec(location.search);
+                return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : null;
+            }
+            function activateFromQSorHash() {
+                var map = {
+                    "resumen": "tab-resumen",
+                    "compra": "tab-compra",
+                    "hardware": "tab-hw",
+                    "software": "tab-sw",
+                    "mantenimientos": "tab-mnt",
+                    "movimientos": "tab-mov",
+                    "adjuntos": "tab-adj"
+                };
+                var tabQS = (getQS('tab') || '').toLowerCase();
+                var btnId = map[tabQS];
+                if (!btnId) {
+                    var hash = (window.location.hash || "#resumen").toLowerCase().replace('#', '');
+                    btnId = map[hash] || "tab-resumen";
+                }
+                var btn = document.getElementById(btnId);
+                if (btn) new bootstrap.Tab(btn).show();
+            }
+            window.addEventListener('hashchange', activateFromQSorHash);
+            document.addEventListener('DOMContentLoaded', function () {
+                activateFromQSorHash();
+                var tabs = document.querySelectorAll('#tabsActivo [data-bs-toggle="tab"]');
+                tabs.forEach(function (t) {
+                    t.addEventListener('shown.bs.tab', function (ev) {
+                        var target = ev.target.getAttribute('data-bs-target');
+                        var hash = "#resumen";
+                        if (target === "#pane-compra") hash = "#compra";
+                        else if (target === "#pane-hw") hash = "#hardware";
+                        else if (target === "#pane-sw") hash = "#software";
+                        else if (target === "#pane-mnt") hash = "#mantenimientos";
+                        else if (target === "#pane-mov") hash = "#movimientos";
+                        else if (target === "#pane-adj") hash = "#adjuntos";
+                        history.replaceState(null, "", hash);
+                    });
+                });
+
+                // ====== Lógica de cambio de proveedor (opcional) ======
+                var btnToggle = document.getElementById('btnToggleProveedor');
+                var zona = document.getElementById('zonaCambioProveedor');
+                var sel = document.getElementById('selProveedor');
+                var btnAplicar = document.getElementById('btnAplicarProveedor');
+                var btnCancelar = document.getElementById('btnCancelarProveedor');
+
+                if (btnToggle && zona && sel) {
+                    btnToggle.addEventListener('click', function () {
+                        zona.style.display = (zona.style.display === 'none' || zona.style.display === '') ? 'block' : 'none';
+                    });
+                }
+
+                function setHiddenProveedor(val) {
+                    var hidden = document.querySelector('input[type="hidden"][name="IdProveedor"]');
+                    if (hidden) hidden.value = val || '';
+                }
+
+                if (btnAplicar && sel) {
+                    btnAplicar.addEventListener('click', function () {
+                        setHiddenProveedor(sel.value);
+                        zona.style.display = 'none';
+                    });
+                }
+                if (btnCancelar && sel) {
+                    btnCancelar.addEventListener('click', function () {
+                        var hidden = document.querySelector('input[type="hidden"][name="IdProveedor"]');
+                        if (hidden) sel.value = hidden.value || '';
+                        zona.style.display = 'none';
+                    });
+                }
+            });
+        })();
+    </script>
+
+    <!-- MOVIMIENTOS -->
+    <script>
+      window.MOV_CFG = {
+        idActivo: @Model.IdActivo,
+        routes: {
+          list: '@Url.Action("Movimientos","Activos")',
+          form: '@Url.Action("MovimientoForm","Activos")',
+          del:  '@Url.Action("EliminarMovimiento","Activos")',
+          add:  '@Url.Action("AgregarMovimiento","Activos")',
+          edit: '@Url.Action("EditarMovimiento","Activos")'
+        }
+      };
+    </script>
+    <script src="~/Scripts/Views/Detalle_Movimientos.js"></script>
+
+    <!-- SOFTWARE -->
+    <script>
+      window.SW_CFG = {
+        idActivo: @Model.IdActivo,
+        routes: {
+          list: '@Url.Action("Software","Activos")',
+          form: '@Url.Action("SoftwareForm","Activos")',
+          del:  '@Url.Action("EliminarSoftware","Activos")',
+          add:  '@Url.Action("AgregarSoftware","Activos")',
+          edit: '@Url.Action("EditarSoftware","Activos")'
+        }
+      };
+    </script>
+    <script src="~/Scripts/Views/Detalle_Software.js"></script>
+
+    <!-- MANTENIMIENTOS -->
+    <script>
+      window.MNT_CFG = {
+        idActivo: @Model.IdActivo,
+        routes: {
+          list: '@Url.Action("Mantenimientos","Activos")',
+          form: '@Url.Action("MantenimientoForm","Activos")',
+          add:  '@Url.Action("AgregarMantenimiento","Activos")',
+          edit: '@Url.Action("EditarMantenimiento","Activos")',
+          del:  '@Url.Action("EliminarMantenimiento","Activos")'
+        }
+      };
+    </script>
+    <script src="~/Scripts/Views/Detalle_Mantenimientos.js"></script>
+
+    <!-- ADJUNTOS -->
+    <script>
+      window.ADJ_CFG = {
+        idActivo: @Model.IdActivo,
+        routes: {
+          list:     '@Url.Action("Adjuntos","Activos")',
+          form:     '@Url.Action("AdjuntoForm","Activos")',
+          add:      '@Url.Action("AgregarAdjunto","Activos")',
+          editName: '@Url.Action("EditarNombreAdjunto","Activos")',
+          del:      '@Url.Action("EliminarAdjunto","Activos")',
+          download: '@Url.Action("DescargarAdjunto","Activos")'
+        }
+      };
+    </script>
+    <script src="~/Scripts/Views/Detalle_Adjuntos.js"></script>
+
+    <!-- Modales -->
+    <div class="modal fade" id="modalMovimiento" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content"><!-- _MovimientoForm --></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalSoftware" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content"><!-- _SoftwareForm --></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalMantenimiento" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content"><!-- _MantenimientoForm --></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalAdjunto" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content"><!-- _AdjuntoForm --></div>
+        </div>
+    </div>
+}
